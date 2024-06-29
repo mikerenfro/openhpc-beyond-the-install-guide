@@ -11,11 +11,14 @@ Vagrant.configure("2") do |config|
   #   vb.memory = "1024"
   # end
   config.vm.provision "shell", inline: <<-SHELL
-    yum -y install mtools git gcc
+    /bin/cp /vagrant/opentofu.repo /etc/yum.repos.d/
+    yum -y install mtools git gcc tofu python3-pip
   SHELL
   config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV
     git clone https://github.com/mikerenfro/ohpc-jetstream2.git
-    ( cd ohpc-jetstream2 && ./ipxe.sh && cp disk.img /vagrant )
+    ( if [ ! -f /vagrant/disk.img ]; then cd ohpc-jetstream2 && ./ipxe.sh && cp disk.img /vagrant ; else echo "/vagrant/disk.img already exists"; fi )
     ls -l /vagrant/disk.img
+    pip install --user python-openstackclient
+    pip install --user ansible
   SHELLUNPRIV
 end

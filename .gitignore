@@ -1,2 +1,3 @@
 .vagrant/
 /disk.img
+/app-cred-*-openrc.sh
