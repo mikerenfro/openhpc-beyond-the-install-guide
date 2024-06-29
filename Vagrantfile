@@ -20,5 +20,7 @@ Vagrant.configure("2") do |config|
     ls -l /vagrant/disk.img
     pip install --user python-openstackclient
     pip install --user ansible
+    mkdir -p ~/.bashrc.d/
+    cp /vagrant/app-cred-*-openrc.sh ~/.bashrc.d/
   SHELLUNPRIV
 end
