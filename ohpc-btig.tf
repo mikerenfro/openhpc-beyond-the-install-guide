@@ -49,6 +49,19 @@ resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-icmp-work" {
   remote_ip_prefix  = var.work_ip_range
   security_group_id = openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id
 }
+## Define a security group to allow all traffic on internal network segment
+resource "openstack_networking_secgroup_v2" "ohpc-btig-allow-all" {
+  name        = "ohpc-btig-allow-all"
+  description = "all traffic enabled"
+}
+## Create all-traffic access rules for internal network segment
+resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-allow-all-internal" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  remote_ip_prefix  = "172.16.0.0/16"
+  security_group_id = openstack_networking_secgroup_v2.ohpc-btig-allow-all.id
+}
+
 
 ## https://docs.jetstream-cloud.org/ui/cli/network/ and
 ## https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs/resources/networking_network_v2
@@ -106,7 +119,7 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-sms" {
   admin_state_up = "true"
   network_id = openstack_networking_network_v2.ohpc-btig-internal-network.id
 
-  # security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id]
+  security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.id]
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet.id
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet.cidr, 1)
@@ -120,10 +133,9 @@ resource "openstack_compute_instance_v2" "ohpc-btig-sms" {
   network {
     port = openstack_networking_port_v2.ohpc-btig-port-external-sms.id
   }
-  # network {
-  #   port = openstack_networking_port_v2.ohpc-btig-port-internal-sms.id
-  # }
-  security_groups = ["ohpc-btig-ssh-icmp"]
+  network {
+    port = openstack_networking_port_v2.ohpc-btig-port-internal-sms.id
+  }
   user_data = <<-EOF
     #!/bin/bash
     passwd -d root
