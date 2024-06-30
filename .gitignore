@@ -1,3 +1,11 @@
+/.terraform/
+/.terraform.lock.hcl
 .vagrant/
-/disk.img
 /app-cred-*-openrc.sh
+/disk.img
+/local.tf
+/local.ini
+/ssh_key.tf
+/terraform.tfstate
+/terraform.tfstate.backup
+/terraform.tfstate.lock.info

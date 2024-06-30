@@ -23,5 +23,11 @@ Vagrant.configure("2") do |config|
     mkdir -p ~/.bashrc.d/
     cp /vagrant/app-cred-*-openrc.sh ~/.bashrc.d/
     ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519
+    cat > /vagrant/ssh_key.tf <<EOD
+variable "ssh_public_key" {
+    type = string
+    default = "$(cat ~/.ssh/id_ed25519.pub)"
+}
+EOD
   SHELLUNPRIV
 end
