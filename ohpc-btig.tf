@@ -150,7 +150,7 @@ resource "local_file" "ansible" {
   content = <<-EOF
     ## auto-generated
     [ohpc]
-    head ansible_host=${openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms.address} ansible_user=rocky arch=x86_64
+    sms ansible_host=${openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms.address} ansible_user=rocky arch=x86_64
 
     [ohpc:vars]
     # sshkey=${var.ssh_public_key}
