@@ -1,5 +1,6 @@
 /.terraform/
 /.terraform.lock.hcl
+/.terraform.tfstate.lock.info
 .vagrant/
 /app-cred-*-openrc.sh
 /disk.img
@@ -8,4 +9,3 @@
 /ssh_key.tf
 /terraform.tfstate
 /terraform.tfstate.backup
-/terraform.tfstate.lock.info
