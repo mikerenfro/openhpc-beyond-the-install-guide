@@ -3,7 +3,8 @@ IMAGE_FILE=disk.img
 if [ ! -f .terraform.lock.hcl ]; then
     tofu init
 else
-    echo "Tofu already initialized"
+    echo "Tofu already initialized, seeing if upgrade needed"
+    tofu init -upgrade
 fi
 if [ -z "$(openstack image list --name ${IMAGE_NAME} -c ID -f value)" ]; then
     if [ -f disk.img ]; then
