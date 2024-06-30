@@ -62,7 +62,6 @@ resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-allow-all-internal" 
   security_group_id = openstack_networking_secgroup_v2.ohpc-btig-allow-all.id
 }
 
-
 ## https://docs.jetstream-cloud.org/ui/cli/network/ and
 ## https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs/resources/networking_network_v2
 resource "openstack_networking_network_v2" "ohpc-btig-external-network" {
@@ -107,7 +106,7 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-external-sms" {
   security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id]
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-external-subnet.id
-      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-external-subnet.cidr, 8)
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-external-subnet.cidr, 3)
   }
 }
 resource "openstack_networking_floatingip_associate_v2" "ohpc-btig-floating-ip-associate-sms" {
