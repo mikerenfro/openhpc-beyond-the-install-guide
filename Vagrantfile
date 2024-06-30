@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
   #   vb.memory = "1024"
   # end
   config.vm.provision "shell", inline: <<-SHELL
-    /bin/cp /vagrant/opentofu.repo /etc/yum.repos.d/
+    /bin/cp /vagrant/repos/opentofu.repo /etc/yum.repos.d/
     yum -y install mtools git gcc tofu python3-pip
   SHELL
   config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV

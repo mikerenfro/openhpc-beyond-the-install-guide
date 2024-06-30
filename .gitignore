@@ -4,7 +4,7 @@
 /app-cred-*-openrc.sh
 /disk.img
 /local.tf
-/local.ini
+/ansible/local.ini
 /ssh_key.tf
 /terraform.tfstate
 /terraform.tfstate.backup

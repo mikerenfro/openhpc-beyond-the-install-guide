@@ -147,7 +147,7 @@ resource "openstack_compute_instance_v2" "ohpc-btig-sms" {
 
 ### Create an Ansible inventory on the local system, including the OpenHPC managment node's external IP
 resource "local_file" "ansible" {
-  filename = "local.ini"
+  filename = "ansible/local.ini"
   content = <<-EOF
     ## auto-generated
     [ohpc]
@@ -158,7 +158,7 @@ resource "local_file" "ansible" {
     EOF
 }
 
-### Show the OpenHPC management node's external IPv4 and v6 addresses, so that they can be accessed with "ssh rocky@OHPC_IP"
+### Show the OpenHPC management node's external IPv4 address, so that it can be accessed with "ssh rocky@OHPC_IP"
 output "ohpc-btig-sms-ipv4" {
   value = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms.address
 }
