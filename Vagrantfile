@@ -22,5 +22,6 @@ Vagrant.configure("2") do |config|
     pip install --user ansible
     mkdir -p ~/.bashrc.d/
     cp /vagrant/app-cred-*-openrc.sh ~/.bashrc.d/
+    ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519
   SHELLUNPRIV
 end
