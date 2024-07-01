@@ -55,6 +55,7 @@
       ansible.builtin.copy:
         src: /opt/ohpc/pub/doc/recipes/rocky9/x86_64/warewulf/slurm/recipe.sh
         dest: /root/recipe.sh
+        mode: '0755'
         remote_src: yes
         force: false
     - name: Remove exports commands in recipe.sh
