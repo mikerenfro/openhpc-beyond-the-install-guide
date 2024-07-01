@@ -1,3 +1,11 @@
+- name: 0. Undocumented Prereqs
+  hosts: sms
+  become: true
+  tasks:
+    - name: Install undocumented package dependencies
+      ansible.builtin.yum:
+        name: s-nail
+
 - name: 2. Install Base Operating System
   hosts: sms
   become: true
@@ -50,6 +58,11 @@
         path: /root/input.local
         line: "provision_wait=1"
         search_string: "provision_wait="
+    - name: Set num_computes value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "num_computes=2"
+        search_string: "num_computes="
 
     - name: Make copy of recipe.sh
       ansible.builtin.copy:
@@ -84,8 +97,21 @@
         - "server 0.centos.pool.ntp.org"
         - "allow {{ ansible_eth1.ipv4.network }}/{{ ansible_eth1.ipv4.prefix }}"
 
-    # - name: Run recipe.sh script
-    #   ansible.builtin.shell: |
-    #     OHPC_INPUT_LOCAL=/root/input.local /root/recipe.sh
-    #   args:
-    #     creates: /etc/slurm/slurm.conf
+    - name: Run recipe.sh script
+      ansible.builtin.shell: OHPC_INPUT_LOCAL=/root/input.local /root/recipe.sh
+      async: 720
+      poll: 10
+      args:
+        creates: /etc/slurm/slurm.conf
+
+    - name: Check for duplicate ReturnToService lines in /etc/slurm/slurm.conf
+      ansible.builtin.shell: |
+        grep -c '^ReturnToService' /etc/slurm/slurm.conf
+      register: returntoservice_lines
+      changed_when: false
+      ignore_errors: true
+    - name: Remove duplicate ReturnToService line from /etc/slurm/slurm.conf
+      ansible.builtin.shell: |
+        sed -i '0,/ReturnToService=/{/ReturnToService=/d;}' /etc/slurm/slurm.conf
+      when: returntoservice_lines.stdout.find('1') == -1
+      # https://stackoverflow.com/a/23697254
