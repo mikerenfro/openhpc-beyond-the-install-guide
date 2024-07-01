@@ -9,11 +9,6 @@
     - name: Disable SELinux
       ansible.posix.selinux:
         state: disabled
-    - name: Stop and disable firewall
-      ansible.builtin.systemd_service:
-        name: firewalld.service
-        enabled: false
-        state: stopped
 
 - name: 3. Install OpenHPC Components
   hosts: sms
@@ -56,20 +51,40 @@
         line: "provision_wait=1"
         search_string: "provision_wait="
 
-    - name: Make copy of input.local
+    - name: Make copy of recipe.sh
       ansible.builtin.copy:
         src: /opt/ohpc/pub/doc/recipes/rocky9/x86_64/warewulf/slurm/recipe.sh
         dest: /root/recipe.sh
         remote_src: yes
         force: false
-    - name: Set remove fstab commands in recipe.sh
+    - name: Remove exports commands in recipe.sh
       ansible.builtin.lineinfile:
         path: /root/recipe.sh
         state: absent
-        regexp: "/etc/fstab"
+        regexp: "/etc/exports"
+    - name: Add lines to /etc/exports
+      ansible.builtin.lineinfile:
+        path: /etc/exports
+        line: "{{ item.path }} {{ ansible_eth1.ipv4.network }}/{{ ansible_eth1.ipv4.prefix }}(rw,no_subtree_check,fsid={{ item.fsid }}{{ item.options }})"
+      loop:
+        - { path: '/home', fsid: '10' , options: ',no_root_squash' }
+        - { path: '/opt/ohpc/pub', fsid: '11' , options: '' }
+    - name: Remove chrony.conf commands in recipe.sh
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        state: absent
+        regexp: " /etc/chrony.conf"
+    - name: Add lines to /etc/chrony.conf
+      ansible.builtin.lineinfile:
+        path: /etc/chrony.conf
+        line: "{{ item }}"
+      loop:
+        - "local stratum 10"
+        - "server 0.centos.pool.ntp.org"
+        - "allow {{ ansible_eth1.ipv4.network }}/{{ ansible_eth1.ipv4.prefix }}"
 
-    - name: Run recipe.sh script
-      ansible.builtin.shell: |
-        OHPC_INPUT_LOCAL=/root/input.local /root/recipe.sh
-      args:
-        creates: /etc/slurm/slurm.conf
+    # - name: Run recipe.sh script
+    #   ansible.builtin.shell: |
+    #     OHPC_INPUT_LOCAL=/root/input.local /root/recipe.sh
+    #   args:
+    #     creates: /etc/slurm/slurm.conf
