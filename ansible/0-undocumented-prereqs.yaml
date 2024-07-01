@@ -1,0 +1,7 @@
+- name: 0. Undocumented Prereqs
+  hosts: sms
+  become: true
+  tasks:
+    - name: Install undocumented package dependencies
+      ansible.builtin.yum:
+        name: s-nail

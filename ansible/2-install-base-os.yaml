@@ -1,0 +1,11 @@
+- name: 2. Install Base Operating System
+  hosts: sms
+  become: true
+  tasks:
+    - name: Add hostname to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0]) }} sms.localdomain sms"
+    - name: Disable SELinux
+      ansible.posix.selinux:
+        state: disabled

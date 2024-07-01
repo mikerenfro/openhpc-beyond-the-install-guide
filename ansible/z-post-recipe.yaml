@@ -1,0 +1,15 @@
+- name: Z. Post-recipe.sh
+  hosts: sms
+  become: true
+  tasks:
+    - name: Check for duplicate ReturnToService lines in /etc/slurm/slurm.conf
+      ansible.builtin.shell: |
+        grep -c '^ReturnToService' /etc/slurm/slurm.conf
+      register: returntoservice_lines
+      changed_when: false
+      ignore_errors: true
+    - name: Remove duplicate ReturnToService line from /etc/slurm/slurm.conf
+      ansible.builtin.shell: |
+        sed -i '0,/ReturnToService=/{/ReturnToService=/d;}' /etc/slurm/slurm.conf
+      when: returntoservice_lines.stdout.find('1') == -1
+      # https://stackoverflow.com/a/23697254
