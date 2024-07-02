@@ -85,3 +85,21 @@ resource "openstack_compute_instance_v2" "node" {
   }
   security_groups = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.name]
 }
+
+resource "openstack_networking_port_v2" "ohpc-btig-port-internal-node" {
+  for_each = {
+    for node in local.compute_nodes : "cluster${node[0]}-node${node[1]}" => {
+      cluster = node[0]
+      node_number = node[1]
+    }
+  }
+  name           = "ohpc-btig-port-internal-cluster${each.value.cluster}-node${each.value.node_number}"
+  admin_state_up = "true"
+  network_id = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster].id
+
+  security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.id]
+  fixed_ip {
+      subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].id
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].cidr, 257+each.value.node_number)
+  }
+}
