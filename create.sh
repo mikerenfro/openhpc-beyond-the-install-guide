@@ -14,4 +14,4 @@ if [[ -n "${OHPC_IP4}" ]] ; then
   done
 fi
 
-echo "=== create.sh ${OHPC_IP4}"
+echo "=== create.sh $(echo ${OHPC_IP4})"
