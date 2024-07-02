@@ -4,10 +4,11 @@ resource "openstack_networking_network_v2" "ohpc-btig-internal-network" {
   admin_state_up = "true"
 }
 resource "openstack_networking_subnet_v2" "ohpc-btig-internal-subnet" {
-  count      = var.n_students+1
-  network_id = openstack_networking_network_v2.ohpc-btig-internal-network[count.index].id
-  name       = "ohpc-btig-internal-subnet-${count.index}"
-  cidr       = "172.16.0.0/16"
+  count       = var.n_students+1
+  network_id  = openstack_networking_network_v2.ohpc-btig-internal-network[count.index].id
+  name        = "ohpc-btig-internal-subnet-${count.index}"
+  cidr        = "172.16.0.0/16"
+  enable_dhcp = false
 }
 
 ## https://docs.jetstream-cloud.org/ui/cli/launch/ and
@@ -72,16 +73,15 @@ locals {
 resource "openstack_compute_instance_v2" "node" {
   for_each = {
     for node in local.compute_nodes : "cluster${node[0]}-node${node[1]}" => {
-      cluster = node[0]
+      cluster_number = node[0]
       node_number = node[1]
     }
   }
-  name = "cluster${each.value.cluster}-node${each.value.node_number}"
+  name = "cluster${each.value.cluster_number}-node${each.value.node_number}"
   image_name = "efi-ipxe"
   flavor_name = "m3.small"
   network {
-    uuid = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster].id
-    fixed_ip_v4 = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].cidr, 257 + each.value.node_number)
+    port = openstack_networking_port_v2.ohpc-btig-port-internal-node["cluster${each.value.cluster_number}-node${each.value.node_number}"].id
   }
   security_groups = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.name]
 }
@@ -89,17 +89,16 @@ resource "openstack_compute_instance_v2" "node" {
 resource "openstack_networking_port_v2" "ohpc-btig-port-internal-node" {
   for_each = {
     for node in local.compute_nodes : "cluster${node[0]}-node${node[1]}" => {
-      cluster = node[0]
+      cluster_number = node[0]
       node_number = node[1]
     }
   }
-  name           = "ohpc-btig-port-internal-cluster${each.value.cluster}-node${each.value.node_number}"
-  admin_state_up = "true"
-  network_id = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster].id
-
+  name               = "ohpc-btig-port-internal-cluster${each.value.cluster_number}-node${each.value.node_number}"
+  admin_state_up     = "true"
+  network_id         = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster_number].id
   security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.id]
   fixed_ip {
-      subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].id
-      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].cidr, 257+each.value.node_number)
+      subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].id
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 256 + 1 + each.value.node_number)
   }
 }
