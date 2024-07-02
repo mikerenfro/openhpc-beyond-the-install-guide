@@ -102,3 +102,10 @@ ${openstack_compute_instance_v2.ohpc-btig-sms[i].name} ansible_host=${openstack_
 output "ohpc-btig-sms-ipv4" {
   value = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms[*].address
 }
+
+### Show the compute nodes' hostnames and MAC addresses
+output "ohpc-btig-macs" {
+  value = {
+    for k, node in openstack_compute_instance_v2.node : k => [ node.network[0].mac, node.network[0].fixed_ip_v4 ]
+  }
+}
