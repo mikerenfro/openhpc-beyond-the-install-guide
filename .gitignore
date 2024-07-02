@@ -6,6 +6,7 @@
 /disk.img
 /local.tf
 /ansible/local.ini
+/ansible/host_vars/
 /ssh_key.tf
 /terraform.tfstate
 /terraform.tfstate.backup
