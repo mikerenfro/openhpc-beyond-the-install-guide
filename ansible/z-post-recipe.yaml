@@ -13,3 +13,17 @@
         sed -i '0,/ReturnToService=/{/ReturnToService=/d;}' /etc/slurm/slurm.conf
       when: returntoservice_lines.stdout.find('1') == -1
       # https://stackoverflow.com/a/23697254
+    - name: Create /var/log/slurmctld.log
+      ansible.builtin.file:
+        path: /var/log/slurmctld.log
+        state: touch
+        owner: slurm
+        group: slurm
+        mode: '0640'
+    - name: Correct SlurmctldHost in /etc/slurm/slurm.conf
+      ansible.builtin.lineinfile:
+        path: /etc/slurm/slurm.conf
+        line: "SlurmctldHost={{ ansible_hostname }}"
+        search_string: "^SlurmctldHost="
+    - name: Restart slurmctld
+      ansible.builtin.shell: systemctl restart slurmctld
