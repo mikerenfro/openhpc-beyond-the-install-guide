@@ -7,9 +7,11 @@ tofu apply -auto-approve
 
 echo "--- removing known-hosts entries"
 
-OHPC_IP4=$(tofu output -raw ohpc-btig-sms-ipv4)
+OHPC_IP4=$(tofu output -json ohpc-btig-sms-ipv4 | jq -r '.[]')
 if [[ -n "${OHPC_IP4}" ]] ; then
-  ssh-keygen -R $OHPC_IP4
+  for IP in ${OHPC_IP4}; do
+    ssh-keygen -R $OHPC_IP4
+  done
 fi
 
 echo "=== create.sh ${OHPC_IP4}"

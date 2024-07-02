@@ -69,7 +69,7 @@ resource "openstack_networking_network_v2" "ohpc-btig-external-network" {
 resource "openstack_networking_subnet_v2" "ohpc-btig-external-subnet" {
   network_id = openstack_networking_network_v2.ohpc-btig-external-network.id
   name       = "ohpc-btig-external-subnet"
-  cidr       = "10.38.50.0/24"
+  cidr       = "10.38.50.0/23"
 }
 resource "openstack_networking_router_v2" "ohpc-btig-router" {
   name                = "ohpc-btig-router"
@@ -89,7 +89,9 @@ resource "local_file" "ansible" {
   content = <<-EOF
     ## auto-generated
     [ohpc]
-    sms ansible_host=${openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms.address} ansible_user=rocky arch=x86_64 ansible_python_interpreter=/usr/bin/python3.9
+    %{ for i in range(0, var.n_students+1) ~}
+${openstack_compute_instance_v2.ohpc-btig-sms[i].name} ansible_host=${openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms[i].address} ansible_user=rocky arch=x86_64 ansible_python_interpreter=/usr/bin/python3.9
+    %{ endfor ~}
 
     [ohpc:vars]
     # sshkey=${var.ssh_public_key}
@@ -98,5 +100,5 @@ resource "local_file" "ansible" {
 
 ### Show the OpenHPC management node's external IPv4 address, so that it can be accessed with "ssh rocky@OHPC_IP"
 output "ohpc-btig-sms-ipv4" {
-  value = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms.address
+  value = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms[*].address
 }
