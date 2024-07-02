@@ -38,6 +38,16 @@
       loop:
         - { path: '/home', fsid: '10' , options: ',no_root_squash' }
         - { path: '/opt/ohpc/pub', fsid: '11' , options: '' }
+    - name: Remove pdsh commands in recipe.sh
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        state: absent
+        regexp: "^pdsh"
+    - name: Enable slurmd and munge in chroot before VNFS build
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        insertbefore: "^wwvnfs"
+        line: chroot $CHROOT systemctl enable slurmd munge
     - name: Remove chrony.conf commands in recipe.sh
       ansible.builtin.lineinfile:
         path: /root/recipe.sh
