@@ -6,9 +6,11 @@ for n in $cluster_numbers; do
     echo ${host_var_file}
     echo "compute_nodes:" > ${host_var_file}
     i=1
-    for n in $(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}\"))"); do
-        mac=$(tofu output -json ohpc-btig-macs | jq -r ".[$n][0]")
+    for j in $(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}\"))"); do
+        mac=$(tofu output -json ohpc-btig-macs | jq -r ".[$j][0]")
         echo "- { name: \"c${i}\", mac: \"${mac}\" }" >> ${host_var_file}
         ((i++))
     done
+    num_computes=$(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}\"))" | wc -l)
+    echo "num_computes: ${num_computes}" >> ${host_var_file}
 done
