@@ -16,7 +16,7 @@
     - name: Set num_computes value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local
-        line: "num_computes=2"
+        line: "num_computes={{ num_computes }}"
         search_string: "num_computes="
 
     - name: Make copy of recipe.sh
@@ -61,10 +61,3 @@
         - "local stratum 10"
         - "server 0.centos.pool.ntp.org"
         - "allow {{ ansible_eth1.ipv4.network }}/{{ ansible_eth1.ipv4.prefix }}"
-
-    - name: Run recipe.sh script
-      ansible.builtin.shell: OHPC_INPUT_LOCAL=/root/input.local /root/recipe.sh
-      async: 720
-      poll: 10
-      args:
-        creates: /etc/slurm/slurm.conf
