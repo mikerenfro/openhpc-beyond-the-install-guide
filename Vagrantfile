@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
   # end
   config.vm.provision "shell", inline: <<-SHELL
     /bin/cp /vagrant/repos/opentofu.repo /etc/yum.repos.d/
-    yum -y install mtools git gcc tofu python3.12-pip python3.12-devel
+    yum -y install mtools git gcc tofu python3.12-pip python3.12-devel jq
   SHELL
   config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV
     git clone https://github.com/mikerenfro/ohpc-jetstream2.git
