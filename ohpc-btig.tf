@@ -81,7 +81,7 @@ resource "openstack_compute_instance_v2" "node" {
   flavor_name = "m3.small"
   network {
     uuid = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster].id
-    fixed_ip_v4 = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].cidr, 256 + each.value.node_number)
+    fixed_ip_v4 = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster].cidr, 257 + each.value.node_number)
   }
   security_groups = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.name]
 }
