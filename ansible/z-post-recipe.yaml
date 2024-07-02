@@ -1,5 +1,5 @@
 - name: Z. Post-recipe.sh
-  hosts: sms
+  hosts: ohpc
   become: true
   tasks:
     - name: Check for duplicate ReturnToService lines in /etc/slurm/slurm.conf

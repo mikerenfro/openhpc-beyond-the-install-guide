@@ -1,5 +1,5 @@
 - name: 2. Install Base Operating System
-  hosts: sms
+  hosts: ohpc
   become: true
   tasks:
     - name: Add hostname to /etc/hosts

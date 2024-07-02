@@ -1,5 +1,5 @@
 - name: 0. Undocumented Prereqs
-  hosts: sms
+  hosts: ohpc
   become: true
   tasks:
     - name: Install undocumented package dependencies

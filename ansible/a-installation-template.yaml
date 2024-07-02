@@ -1,5 +1,5 @@
 - name: A. Installation Template
-  hosts: sms
+  hosts: ohpc
   become: true
   tasks:
     - name: Make copy of input.local
