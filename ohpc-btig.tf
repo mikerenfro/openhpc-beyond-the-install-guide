@@ -78,6 +78,7 @@ resource "openstack_compute_instance_v2" "node" {
     }
   }
   name = "cluster${each.value.cluster_number}-node${each.value.node_number}"
+  # image_name = "Featured-RockyLinux9"
   image_name = "efi-ipxe"
   flavor_name = "m3.small"
   network {
