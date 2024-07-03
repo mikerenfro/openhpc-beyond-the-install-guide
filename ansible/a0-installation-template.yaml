@@ -19,6 +19,12 @@
         line: "num_computes={{ num_computes }}"
         search_string: "num_computes="
 
+    - name: Replace MAC addresses in input.local
+      include_tasks: replace_mac.yaml
+      loop: "{{ compute_nodes }}"
+      loop_control:
+        index_var: my_idx
+
     - name: Make copy of recipe.sh
       ansible.builtin.copy:
         src: /opt/ohpc/pub/doc/recipes/rocky9/x86_64/warewulf/slurm/recipe.sh

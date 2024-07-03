@@ -1,0 +1,5 @@
+- name: Replace c_mac entry in input.local
+  ansible.builtin.replace:
+    path: /root/input.local
+    regexp: '^c_mac\[{{ my_idx }}\]=.*'
+    replace: 'c_mac[{{ my_idx }}]={{ item.mac }}'
