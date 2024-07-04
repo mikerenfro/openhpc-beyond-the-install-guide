@@ -15,7 +15,10 @@ if [ -z "$(openstack image list --name ${IMAGE_NAME} -c ID -f value)" ]; then
             --property hw_firmware_type='uefi' \
             --property hw_machine_type=q35 \
             --property hw_scsi_model='virtio-scsi' \
+            --property hw_vif_model='e1000' \
             ${IMAGE_NAME}
+        # e1000 NIC is better supported for normal kernels:
+        # https://lists.openhpc.community/g/users/topic/network_hardware_error/33151796
     else
         echo "Need to upload ${IMAGE_NAME} image, but ${IMAGE_FILE} does not exist"
         exit 1
