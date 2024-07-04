@@ -15,6 +15,7 @@ while read p ; do
     host_var_file=ansible/host_vars/sms-${i}
     if [ -f ${host_var_file} ]; then
         pc=$(python -c "import crypt,getpass; print(crypt.crypt('$p', crypt.mksalt(crypt.METHOD_SHA512)))")
+        # https://unix.stackexchange.com/a/158402
         echo "user_creds:" >> ${host_var_file}
         for n in $(seq 1 ${users_per_host}); do
             echo "- { username: 'user${n}', password: '$pc' }" >> ${host_var_file}
