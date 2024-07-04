@@ -19,6 +19,7 @@ if [ -z "$(openstack image list --name ${IMAGE_NAME} -c ID -f value)" ]; then
             ${IMAGE_NAME}
         # e1000 NIC is better supported for normal kernels:
         # https://lists.openhpc.community/g/users/topic/network_hardware_error/33151796
+        # https://wiki.openstack.org/wiki/VirtDriverImageProperties
     else
         echo "Need to upload ${IMAGE_NAME} image, but ${IMAGE_FILE} does not exist"
         exit 1
