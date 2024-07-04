@@ -15,6 +15,7 @@ if [[ -n "${OHPC_IP4}" ]] ; then
 fi
 
 ./macs_to_host_vars.sh
+./passwords_to_host_vars.sh
 
 echo "=== create.sh $(echo ${OHPC_IP4})"
 
