@@ -13,51 +13,23 @@ resource "openstack_networking_secgroup_v2" "ohpc-btig-ssh-icmp" {
   name        = "ohpc-btig-ssh-icmp"
   description = "ssh and icmp enabled"
 }
-## Create SSH access rules from home and from work
-resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-ssh-home" {
+## Create SSH access rules from outside
+resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-outside-ssh" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
   port_range_min    = 22
   port_range_max    = 22
-  remote_ip_prefix  = var.home_ip_range
+  remote_ip_prefix  = var.outside_ip_range
   security_group_id = openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id
 }
-resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-ssh-work" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 22
-  port_range_max    = 22
-  remote_ip_prefix  = var.work_ip_range
-  security_group_id = openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id
-}
-## Create ICMP access rules from home and from work
-resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-icmp-home" {
+## Create ICMP access rules from outside
+resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-outside-icmp" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "icmp"
-  remote_ip_prefix  = var.home_ip_range
+  remote_ip_prefix  = var.outside_ip_range
   security_group_id = openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id
-}
-resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-icmp-work" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "icmp"
-  remote_ip_prefix  = var.work_ip_range
-  security_group_id = openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id
-}
-## Define a security group to allow all traffic on internal network segment
-resource "openstack_networking_secgroup_v2" "ohpc-btig-allow-all" {
-  name        = "ohpc-btig-allow-all"
-  description = "all traffic enabled"
-}
-## Create all-traffic access rules for internal network segment
-resource "openstack_networking_secgroup_rule_v2" "ohpc-btig-allow-all-internal" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  remote_ip_prefix  = "172.16.0.0/16"
-  security_group_id = openstack_networking_secgroup_v2.ohpc-btig-allow-all.id
 }
 
 ## https://docs.jetstream-cloud.org/ui/cli/network/ and

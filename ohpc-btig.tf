@@ -41,7 +41,8 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-sms" {
   admin_state_up = "true"
   network_id = openstack_networking_network_v2.ohpc-btig-internal-network[count.index].id
 
-  security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.id]
+  # https://access.redhat.com/solutions/2428301
+  port_security_enabled = false
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[count.index].id
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[count.index].cidr, 1)
@@ -84,7 +85,6 @@ resource "openstack_compute_instance_v2" "node" {
   network {
     port = openstack_networking_port_v2.ohpc-btig-port-internal-node["cluster${each.value.cluster_number}-node${each.value.node_number}"].id
   }
-  security_groups = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.name]
 }
 
 resource "openstack_networking_port_v2" "ohpc-btig-port-internal-node" {
@@ -97,7 +97,6 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-node" {
   name               = "ohpc-btig-port-internal-cluster${each.value.cluster_number}-node${each.value.node_number}"
   admin_state_up     = "true"
   network_id         = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster_number].id
-  security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-allow-all.id]
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].id
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 256 + 1 + each.value.node_number)
