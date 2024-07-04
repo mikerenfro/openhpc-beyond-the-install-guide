@@ -5,7 +5,10 @@
     - name: Add hostname to /etc/hosts
       ansible.builtin.lineinfile:
         path: /etc/hosts
-        line: "{{ ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0]) }} sms.localdomain sms"
+        line: "172.16.0.1 {{ ansible_hostname }}"
     - name: Disable SELinux
       ansible.posix.selinux:
         state: disabled
+    - name: Set timezone to America/New_York
+      community.general.timezone:
+        name: America/New_York
