@@ -20,7 +20,7 @@ echo "=== create.sh $(echo ${OHPC_IP4})"
 
 for ip in ${OHPC_IP4}; do
   while ! ssh-keyscan ${ip} >& /dev/null; do
-    waiting on ${ip} to take an ssh connection
+    echo waiting on ${ip} to take an ssh connection
     sleep 5
   done
 done
