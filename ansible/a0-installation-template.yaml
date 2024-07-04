@@ -26,9 +26,9 @@
     - name: Set slurm_node_config value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local
-        line: 'slurm_node_config="CPUs=2 Boards=1 SocketsPerBoard=2 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=5912"'
+        line: 'slurm_node_config="NodeName=${compute_prefix}[1-${num_computes}] CPUs=2 Boards=1 SocketsPerBoard=2 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=5912"'
         search_string: "slurm_node_config="
-    - name: Set slurm_node_config value in input.local
+    - name: Set update_slurm_nodeconfig value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local
         line: "update_slurm_nodeconfig=1"
