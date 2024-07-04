@@ -20,10 +20,5 @@
         owner: slurm
         group: slurm
         mode: '0640'
-    - name: Correct SlurmctldHost in /etc/slurm/slurm.conf
-      ansible.builtin.lineinfile:
-        path: /etc/slurm/slurm.conf
-        line: "SlurmctldHost={{ ansible_hostname }}"
-        search_string: "^SlurmctldHost="
     - name: Restart slurmctld
       ansible.builtin.shell: systemctl restart slurmctld

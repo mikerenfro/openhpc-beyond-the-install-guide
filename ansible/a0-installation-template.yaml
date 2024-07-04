@@ -18,12 +18,21 @@
         path: /root/input.local
         line: "num_computes={{ num_computes }}"
         search_string: "num_computes="
-
     - name: Replace MAC addresses in input.local
       include_tasks: replace_mac.yaml
       loop: "{{ compute_nodes }}"
       loop_control:
         index_var: my_idx
+    - name: Set slurm_node_config value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "slurm_node_config='CPUs=2 Boards=1 SocketsPerBoard=2 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=5912'"
+        search_string: "slurm_node_config="
+    - name: Set sms_name value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "sms_name={{ ansible_hostname }}"
+        search_string: "sms_name="
 
     - name: Make copy of recipe.sh
       ansible.builtin.copy:
@@ -32,6 +41,11 @@
         mode: '0755'
         remote_src: yes
         force: false
+    - name: Correct CHROOT path in recipe.sh
+      ansible.builtin.replace:
+        path: /root/recipe.sh
+        regexp: 'rocky9.3'
+        replace: 'rocky9.4'
     - name: Remove exports commands in recipe.sh
       ansible.builtin.lineinfile:
         path: /root/recipe.sh
