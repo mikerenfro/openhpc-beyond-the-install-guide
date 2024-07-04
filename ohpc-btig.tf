@@ -79,7 +79,6 @@ resource "openstack_compute_instance_v2" "node" {
     }
   }
   name = "cluster${each.value.cluster_number}-node${each.value.node_number}"
-  # image_name = "Featured-RockyLinux9"
   image_name = "efi-ipxe"
   flavor_name = "m3.small"
   network {
@@ -97,6 +96,8 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-node" {
   name               = "ohpc-btig-port-internal-cluster${each.value.cluster_number}-node${each.value.node_number}"
   admin_state_up     = "true"
   network_id         = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster_number].id
+  # https://access.redhat.com/solutions/2428301
+  port_security_enabled = false
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].id
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 256 + 1 + each.value.node_number)
