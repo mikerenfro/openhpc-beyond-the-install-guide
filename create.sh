@@ -24,3 +24,4 @@ for ip in ${OHPC_IP4}; do
     sleep 5
   done
 done
+echo "--- done."
