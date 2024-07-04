@@ -1,0 +1,10 @@
+- name: Show facts
+  hosts: ohpc
+  become: true
+  tasks:
+    - name: Print eth1 network address
+      ansible.builtin.debug:
+        var: ansible_eth1.ipv4.network
+    - name: Print eth1 network prefix
+      ansible.builtin.debug:
+        var: ansible_eth1.ipv4.prefix
