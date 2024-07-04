@@ -10,3 +10,4 @@
 /ssh_key.tf
 /terraform.tfstate
 /terraform.tfstate.backup
+/user-passwords.txt
