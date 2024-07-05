@@ -14,12 +14,12 @@ Vagrant.configure("2") do |config|
     /bin/cp /vagrant/repos/opentofu.repo /etc/yum.repos.d/
     yum -y install mtools git gcc tofu python3.12-pip python3.12-devel jq
   SHELL
-  config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV
-    git clone https://github.com/mikerenfro/ohpc-jetstream2.git
-    ( if [ ! -f /vagrant/disk.img ]; then cd ohpc-jetstream2 && ./ipxe.sh && cp disk.img /vagrant ; else echo "/vagrant/disk.img already exists"; fi )
+  config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV    
+    ( if [ ! -f /vagrant/disk.img ]; then git clone https://github.com/mikerenfro/ohpc-jetstream2.git && cd ohpc-jetstream2 && ./ipxe.sh && cp disk.img /vagrant ; else echo "/vagrant/disk.img already exists"; fi )
     ls -l /vagrant/disk.img
     pip3.12 install --user python-openstackclient
     pip3.12 install --user ansible
+    pip3.12 install --user xkcdpass
     mkdir -p ~/.bashrc.d/
     cp /vagrant/app-cred-*-openrc.sh ~/.bashrc.d/
     ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519
