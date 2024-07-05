@@ -70,7 +70,7 @@ ${openstack_compute_instance_v2.ohpc-btig-sms[i].name} ansible_host=${openstack_
     EOF
 }
 
-### Create an ssh configon the local system, including the OpenHPC managment nodes external IPs
+### Create an ssh config on the local system, including the OpenHPC managment nodes external IPs
 resource "local_file" "ssh_config" {
   filename = "/home/vagrant/.ssh/config"
   content = <<-EOF
