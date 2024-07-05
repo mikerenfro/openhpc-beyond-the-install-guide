@@ -22,6 +22,7 @@ Vagrant.configure("2") do |config|
     pip3.12 install --user xkcdpass
     mkdir -p ~/.bashrc.d/
     cp /vagrant/openstack-tofu/app-cred-*-openrc.sh ~/.bashrc.d/
+    echo "unset SSH_AUTH_SOCK" > ~/.bashrc.d/unset_ssh_auth_sock.sh
     ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519
     cat > /vagrant/openstack-tofu/ssh_key.tf <<EOD
 variable "ssh_public_key" {

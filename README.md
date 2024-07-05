@@ -42,6 +42,7 @@ The VM will install `opentofu`, the Python OpenStack clients, Ansible, `xkcdpass
 
 If no file named `disk.img` exists in the `openstack-tofu` folder, the VM will create one.
 Then, the VM will also copy the OpenRC file from the `openstack-tofu` folder into a startup folder for the `vagrant` user.
+Also, the VM will ensure that the `vagrant` user does not inherit any `SSH_AUTH_SOCK` variables from the outside environment, as this can interfere with SSH connections to the management nodes. 
 Finally, VM will create an ssh key for the `vagrant` user and include its public contents in the file `ssh_key.tf` in the `openstack-tofu` folder.
 
 Once the VM is finished with these steps, you can log into it with `vagrant ssh` and manage things from there. Test that you can access OpenStack by running `openstack flavor list` and see a list of OpenStack instance types.
