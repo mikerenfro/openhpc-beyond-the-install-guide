@@ -55,7 +55,7 @@ resource "openstack_networking_router_interface_v2" "ohpc-btig-router-interface-
 
 ## Output
 
-### Create an Ansible inventory on the local system, including the OpenHPC managment node's external IP
+### Create an Ansible inventory on the local system, including the OpenHPC managment nodes' external IPs
 resource "local_file" "ansible" {
   filename = "ansible/local.ini"
   content = <<-EOF
@@ -67,6 +67,19 @@ ${openstack_compute_instance_v2.ohpc-btig-sms[i].name} ansible_host=${openstack_
 
     [ohpc:vars]
     # sshkey=${var.ssh_public_key}
+    EOF
+}
+
+### Create an ssh configon the local system, including the OpenHPC managment nodes external IPs
+resource "local_file" "ssh_config" {
+  filename = "/home/vagrant/.ssh/config"
+  content = <<-EOF
+    ## auto-generated
+    %{ for i in range(0, var.n_students+1) ~}
+Host ${openstack_compute_instance_v2.ohpc-btig-sms[i].name} 
+    HostName ${openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms[i].address}
+
+    %{ endfor ~}
     EOF
 }
 
