@@ -26,7 +26,9 @@
         group: slurm
         mode: '0640'
     - name: Restart slurmctld
-      ansible.builtin.shell: systemctl restart slurmctld
+      ansible.builtin.service:
+        name: slurmctld
+        state: restarted
     - name: Grab ssh keys from compute nodes
       ansible.builtin.shell: |
         for n in $(seq 1 {{ num_computes }}); do key=$(ssh-keyscan -t ed25519 172.16.1.${n} 2>/dev/null); echo c${n},$key; done > /etc/ssh/ssh_known_hosts
