@@ -57,7 +57,7 @@ resource "openstack_networking_router_interface_v2" "ohpc-btig-router-interface-
 
 ### Create an Ansible inventory on the local system, including the OpenHPC managment nodes' external IPs
 resource "local_file" "ansible" {
-  filename = "ansible/local.ini"
+  filename = "../ansible/local.ini"
   content = <<-EOF
     ## auto-generated
     [ohpc]
