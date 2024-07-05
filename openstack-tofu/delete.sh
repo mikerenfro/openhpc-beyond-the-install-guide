@@ -2,13 +2,7 @@
 
 echo "=== delete.sh"
 
-echo "--- removing known-hosts entries"
-
-OHPC_IP4=$(tofu output -json ohpc-btig-sms-ipv4 | jq -r '.[]')
-if [[ -n "${OHPC_IP4}" ]] ; then
-  for IP in ${OHPC_IP4}; do
-    ssh-keygen -R $IP
-  done
-fi
+get_cluster_ips_counts  # sets OHPC_IP4, CLUSTER_NUMBERS, CLUSTER_COUNT
+remove_old_keys  # removes any known_hosts entries for each of ${OHPC_IP4}
 
 tofu destroy -auto-approve

@@ -45,7 +45,7 @@ function populate_host_vars() {
           pc=$(python -c "import crypt; print(crypt.crypt('$p', crypt.mksalt(crypt.METHOD_SHA512)))")
           # https://unix.stackexchange.com/a/158402
           echo "user_creds:" >> ${host_var_file}
-          for n in $(seq 1 ${users_per_host}); do
+          for n in $(seq 1 ${USERS_PER_HOST}); do
               echo "- { username: 'user${n}', password: '$pc' }" >> ${host_var_file}
           done
           ((i++))
