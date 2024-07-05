@@ -46,7 +46,7 @@ resource "openstack_networking_subnet_v2" "ohpc-btig-external-subnet" {
 resource "openstack_networking_router_v2" "ohpc-btig-router" {
   name                = "ohpc-btig-router"
   admin_state_up      = true
-  external_network_id = var.openstack_public_router_id
+  external_network_id = var.openstack_public_network_id
 }
 resource "openstack_networking_router_interface_v2" "ohpc-btig-router-interface-external-subnet" {
   router_id = openstack_networking_router_v2.ohpc-btig-router.id
