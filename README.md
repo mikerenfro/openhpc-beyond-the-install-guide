@@ -33,8 +33,8 @@ You should only have one OpenRC file in this folder.
 
 ## Vagrant VM
 
-Running `vagrant up` from the top-level folder for this repository should create a Rocky 9 VM.
-This VM will install `opentofu`, the Python OpenStack clients, Ansible, `xkcdpass`, `mtools` to build an iPXE disk image, `jq` to process JSON data, and all their dependencies.
+Run `vagrant up` from the top-level folder for this repository; this should create a Rocky 9 VM.
+The VM will install `opentofu`, the Python OpenStack clients, Ansible, `xkcdpass`, `mtools` to build an iPXE disk image, `jq` to process JSON data, and all their dependencies.
 
 If no file named `disk.img` exists in the `openstack-tofu` folder, the VM will create one.
 Then, the VM will also copy the OpenRC file from the `openstack-tofu` folder into a startup folder for the `vagrant` user.
