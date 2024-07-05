@@ -14,8 +14,18 @@
       loop: "{{ user_creds }}"
     - name: Ensure wheel users get password-less sudo
       ansible.builtin.lineinfile:
-      path: /etc/sudoers.d/91-wheel-nopasswd
+        path: /etc/sudoers.d/91-wheel-nopasswd
+        create: true
         line: "%wheel ALL=(ALL) NOPASSWD: ALL"
-    # - name: Ensure ssh password authentication is enabled
-    #   ansible.builtin.shell: |
-    #     mv /etc/ssh/sshd_config.d/50-cloud-init.conf{,.orig}
+    - name: Check if /etc/ssh/sshd_config.d/50-cloud-init.conf exists
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+      register: cloudinit
+    - name: Ensure ssh password authentication is enabled
+      ansible.builtin.shell: |
+        mv /etc/ssh/sshd_config.d/50-cloud-init.conf{,.orig}
+      when: cloudinit.stat.exists
+    - name: Reload sshd service
+      ansible.builtin.service:
+        name: sshd
+        state: reloaded
