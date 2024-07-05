@@ -2,7 +2,7 @@
 set -e
 
 REPO_FOLDER=/vagrant
-source ${REPO_FOLDER}/functions.sh
+source ${REPO_FOLDER}/openstack-tofu/functions.sh
 
 echo "=== create.sh"
 
