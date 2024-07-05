@@ -22,20 +22,20 @@ function populate_host_vars() {
       echo "num_computes: ${num_computes}" >> ${host_var_file}
   done
 
-  if [ ! -f ${REPO_FOLDER}/user-passwords.txt ]; then
+  if [ ! -f ${REPO_FOLDER}/ansible/user-passwords.txt ]; then
     xkcdpass \
       --count=${CLUSTER_COUNT} \
       --delimiter=. \
       --max=8 \
       --min=3 \
-      --valid-chars='[a-z]' > ${REPO_FOLDER}/user-passwords.txt
+      --valid-chars='[a-z]' > ${REPO_FOLDER}/ansible/user-passwords.txt
   else
-    if [ $(wc -l ${REPO_FOLDER}/user-passwords.txt) -lt ${CLUSTER_COUNT} ]; then
-      echo "/vagrant/user-passwords.txt contains too few passwords for this class size."
+    if [ $(wc -l ${REPO_FOLDER}/ansible/user-passwords.txt) -lt ${CLUSTER_COUNT} ]; then
+      echo "${REPO_FOLDER}/ansible/user-passwords.txt contains too few passwords for this class size."
       echo "Exiting".
       exit 1
     else
-      echo "${REPO_FOLDER}/user-passwords.txt already exists, not overwriting"
+      echo "${REPO_FOLDER}/ansible/user-passwords.txt already exists, not overwriting"
     fi
   fi
   i=0
@@ -52,7 +52,7 @@ function populate_host_vars() {
       else
           break
       fi
-  done < ${REPO_FOLDER}/user-passwords.txt
+  done < ${REPO_FOLDER}/ansible/user-passwords.txt
 }
 
 function wait_for_sms_boot() {
