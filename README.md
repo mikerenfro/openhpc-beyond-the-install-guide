@@ -3,7 +3,11 @@
 Materials for "OpenHPC: Beyond the Install Guide" half-day tutorial.
 This is the `pearc24` branch for [PEARC24](https://pearc.acm.org/pearc24/).
 
-Infrastruture preparation is largely adapted/copy-pasted from [Tim Middelkoop's ohpc-jetstream2 repo](https://github.com/MiddelkoopT/ohpc-jetstream2/), plus [Jetstream's CLI Overview](https://docs.jetstream-cloud.org/ui/cli/overview/) and following sections.
+Infrastructure preparation is largely adapted/copy-pasted from [Tim Middelkoop's ohpc-jetstream2 repo](https://github.com/MiddelkoopT/ohpc-jetstream2/), plus [Jetstream's CLI Overview](https://docs.jetstream-cloud.org/ui/cli/overview/) and following sections.
+
+The goal of this repository is to let instructors or self-learners to construct one or more OpenHPC 3.x virtual environments, and for those environments to be as close as possible to the defaults from the OpenHPC installation guide.
+
+These environments will be using Rocky 9 x86_64, Warewulf 3, and Slurm.
 
 # Prerequisites to set this up yourself
 
@@ -114,6 +118,70 @@ To finish configuring the clusters,  `cd /vagrant/ansible`. The Ansible folder c
 7. z-post-recipe.yaml
 
 Run these manually one at a time in order, or in a for loop like `for p in [023az]*.yaml; do ansible-playbook $p; done`.
+
+### `0-undocumented-prereqs-unrelated-settings.yaml`
+
+Installs any programs needed for the default OpenHPC configuration files to work, particularly, the `s-nail` program for `MailProg=/bin/mail` in `/etc/slurm/slurm.conf`.
+
+Also configures a few more settings applicable to a multi-student workshop environment, but not necessarily required in every case:
+
+1. Adding the `user1`, ..., `userN` accounts, with membership in group `wheel`.
+2. Ensuring members of group `wheel` have password-less `sudo` access.
+3. Enabling password authentication for ssh connections and reloading the `sshd` service.
+
+### `2-install-base-os.yaml`
+
+As the default Rocky 9 Jetstream images have a workable base operating system installed, completing section 2 of the installation guide only requires:
+
+1. Adding the management system's hostname and internal IP to /etc/hosts.
+2. Disabling SELinux.
+3. Setting the timezone to `America/New_York`.
+   
+Though stopping and disabling `firewalld` is part of section 2, it's already handled in the `recipe.sh` script from Appendix A, so we omit it here.
+
+### `3-install-openhpc-components.yaml`
+
+Since we'll be using the `recipe.sh` script to perform the installation, we skip over most of the steps in section 3.
+Instead we:
+
+1. Install the OpenHPC repository release file.
+2. Enable the CodeReady Builder repository if needed.
+3. Install the `docs-ohpc` package to get a copy of `recipe.sh` and `input.local`.
+
+### `a0-installation-template.yaml`
+
+This playbook makes copies of `recipe.sh` and `input.local`, and modifies them to either match the virtual environment, or to ensure more things are running correctly when the students first connect.
+This includes:
+
+#### `input.local`
+
+1. Setting `provision_wait=1` to spend less time waiting for remote node power-cycling with IPMI, since that's not supported in Jetstream2.
+2. Setting `num_computes` to the number of compute nodes in each cluster.
+3. Replacing MAC addresses for the compute nodes.
+4. Changing the `slurm_node_config` and `update_slurm_nodeconfig` variables to ensure `slurm.conf` has the correct values for the OpenStack instance type.
+5. Setting `sms_name` to the correct hostname of the management node (i.e., `sms-N`).
+
+#### `recipe.sh`
+
+1. Changing the `CHROOT` path from `/opt/ohpc/admin/images/rocky9.3` to `/opt/ohpc/admin/images/rocky9.4`.
+2. Ensuring that the `slurmd` and `munge` services are enabled in the chroot.
+3. Removing unneeded `pdsh` commands.
+4. Replacing `echo` commands with idempotent `ansible.builtin.lineinfile` tasks for both `/etc/exports` and `/etc/chrony.conf`.
+
+### `a1-run-recipe.yaml`
+
+This playbook simply runs the copy of `recipe.sh` with the environment variable `OHPC_INPUT_LOCAL` pointing to the modified copy of `input.local`.
+This will probably take around 10 minutes to run, and multiple management nodes can run the script simultaneously.
+
+### `z-post-recipe.yaml`
+
+This playbook fixes a few things that can only be done after `recipe.sh` has run:
+
+1. Setting the timezone in the chroot to `America/New_York` and rebuilding the chroot.
+2. Removing duplicate `ReturnToService` lines from `/etc/slurm/slurm.conf` (will be unnecessary after an OpenHPC release including [PR 1994](https://github.com/openhpc/ohpc/pull/1994)) is announced).
+3. Creating `/var/log/slurmctld.log` with correct ownership and permissions.
+4. Storing host ssh keys from the compute nodes in the management node's `/etc/ssh/ssh_known_hosts` to eliminate warnings on first ssh connections to the compute nodes.
+5. Rebooting the compute nodes to apply the updated system image from item 1.
 
 # Testing the workshop environment
 
