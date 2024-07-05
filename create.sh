@@ -1,28 +1,17 @@
 #!/bin/bash
 set -e
 
+REPO_FOLDER=/vagrant
+source ${REPO_FOLDER}/functions.sh
+
 echo "=== create.sh"
 
-tofu apply -auto-approve
-
-echo "--- removing known-hosts entries"
-
-OHPC_IP4=$(tofu output -json ohpc-btig-sms-ipv4 | jq -r '.[]')
-if [[ -n "${OHPC_IP4}" ]] ; then
-  for IP in ${OHPC_IP4}; do
-    ssh-keygen -R $IP
-  done
-fi
-
-./macs_to_host_vars.sh
-./passwords_to_host_vars.sh
+tofu apply -auto-approve  # creates routers, networks, subnets, rules, instances, ansible inventory, local ssh config for each SMS
+get_cluster_ips_counts  # sets OHPC_IP4, CLUSTER_NUMBERS, CLUSTER_COUNT
+remove_old_keys  # removes any known_hosts entries for each of ${OHPC_IP4}
+populate_host_vars  # grabs MAC addresses for each cluster's nodes and passwords for each test user account, dumps them into host_vars files for each SMS
+wait_for_sms_boot  # waits for all SMS instances to be available over ssh before continuing
 
 echo "=== create.sh $(echo ${OHPC_IP4})"
 
-for ip in ${OHPC_IP4}; do
-  while ! ssh-keyscan ${ip} >& /dev/null; do
-    echo waiting on ${ip} to take an ssh connection
-    sleep 5
-  done
-done
 echo "--- done."
