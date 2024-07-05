@@ -97,7 +97,7 @@ Additionally, the `create.sh` script will also:
 
 1. Retrieve the public IPv4 addresses for each OpenHPC management node.
 2. Remove any ssh host keys for those addresses stored in `~vagrant/.ssh/known_hosts`.
-3. Populate Ansible `host_vars` files with compute node names and MAC addreses, usernames, and passwords for each cluster.
+3. Populate Ansible `host_vars` files with compute node names and MAC addreses, usernames, and passwords for each cluster. You can adjust the number of user accounts created by changing the `USERS_PER_HOST` value in `create.sh`.
 4. Wait for every OpenHPC management node to respond to ssh connections.
 5. Print the public IPv4 addresses for each OpenHPC management node.
 
