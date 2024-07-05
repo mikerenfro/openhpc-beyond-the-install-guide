@@ -7,7 +7,7 @@ else
     tofu init -upgrade
 fi
 if [ -z "$(openstack image list --name ${IMAGE_NAME} -c ID -f value)" ]; then
-    if [ -f disk.img ]; then
+    if [ -f ${IMAGE_FILE} ]; then
         echo "Creating openstack image ${IMAGE_NAME} from ${IMAGE_FILE}"
         openstack image create \
             --disk-format raw \
