@@ -11,4 +11,3 @@
 /openstack-tofu/ssh_key.tf
 /openstack-tofu/terraform.tfstate
 /openstack-tofu/terraform.tfstate.backup
-/openstack-tofu/user-passwords.txt
