@@ -186,6 +186,13 @@ This playbook fixes a few things that can only be done after `recipe.sh` has run
 
 # Testing the workshop environment
 
+Initial testing from the Vagrant VM:
+
+1. `ssh rocky@sms-0`
+2. `sinfo` until you see node `c1` in an `idle` state.
+3. `ssh c1` to get an expected error message of `Access denied: user rocky (uid=1000) has no active jobs on this node.`
+4. `srun -n2 hostname` to return two lines of `c1`.
+
 By default, each OpenHPC management node has three user accounts defined:
 
 1. `rocky`, which allows logins from the `vagrant` account's ssh key.
@@ -193,4 +200,6 @@ By default, each OpenHPC management node has three user accounts defined:
 
 The passwords for each cluster's `user1` and `user2` account are stored in the `/vagrant/ansible/user-passwords.txt` file.
 The passwords for cluster `N` can be found on line `N+1` of that file (i.e., if the `vagrant` user runs `ssh user2@sms-4`, the password will be on line 5 of the `user-passwords.txt` file.)
-All other users can ssh to the OpenHPC management nodes by IP address. Each management node's IP address can be found in the `/vagrant/ansible/local.ini` file.
+All other users can ssh to the OpenHPC management nodes by public IP address. Each management node's public IP address can be found in the `/vagrant/ansible/local.ini` file.
+
+Thus, the `sinfo`, `ssh`, and `srun` commands above should also work outside the Vagrant VM with the `user1` through `userN` accounts and passwords, as long as you SSH to the management node's public IP address.
