@@ -188,10 +188,10 @@ This playbook fixes a few things that can only be done after `recipe.sh` has run
 
 Initial testing from the Vagrant VM:
 
-1. `ssh rocky@sms-0`
-2. `sinfo` until you see node `c1` in an `idle` state.
-3. `ssh c1` to get an expected error message of `Access denied: user rocky (uid=1000) has no active jobs on this node.`
-4. `srun -n2 hostname` to return two lines of `c1`.
+1. Run `ssh rocky@sms-0` to log into the instructor managment node.
+2. On the management node, run `sinfo` until you see node `c1` in an `idle` state in the default `normal` partition.
+3. On the management node, run `ssh c1` to get an expected error message of `Access denied: user rocky (uid=1000) has no active jobs on this node.`
+4. On the management node, run `srun -n2 hostname` to return two lines of `c1`, indicating that you ran a 2 task-per-node job of the `hostname` command.
 
 By default, each OpenHPC management node has three user accounts defined:
 
