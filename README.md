@@ -50,7 +50,7 @@ Once the VM is finished with these steps, you can log into it with `vagrant ssh`
 ## OpenTofu initialization
 
 First, `cd /vagrant/openstack-tofu` and run `./init.sh`.
-This should initialize the project directory and use the iPXE image `disk.img` to create a new compute image type with an `e1000` network card.
+This should initialize the project directory, and if no compute image named `efi-ipxe` exists in your OpenStack project, it will create a new compute image type with an `e1000` network card using `disk.img`.
 
 ## OpenTofu settings
 
