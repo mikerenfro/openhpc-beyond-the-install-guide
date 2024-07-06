@@ -1,9 +1,11 @@
 function remove_old_keys() {
   if [[ -n "${OHPC_IP4}" ]] ; then
-    echo "--- removing known-hosts entries"
-    for IP in ${OHPC_IP4}; do
-      ssh-keygen -R $IP
-    done
+    if [ -f ~/.ssh/known_hosts ]; then
+      echo "--- removing known-hosts entries"
+      for IP in ${OHPC_IP4}; do
+        ssh-keygen -R $IP
+      done
+    fi
   fi
 }
 
@@ -30,7 +32,7 @@ function populate_host_vars() {
       --min=3 \
       --valid-chars='[a-z]' > ${REPO_FOLDER}/ansible/user-passwords.txt
   else
-    if [ $(wc -l ${REPO_FOLDER}/ansible/user-passwords.txt) -lt ${CLUSTER_COUNT} ]; then
+    if [ $(cat ${REPO_FOLDER}/ansible/user-passwords.txt | wc -w) -lt ${CLUSTER_COUNT} ]; then
       echo "${REPO_FOLDER}/ansible/user-passwords.txt contains too few passwords for this class size."
       echo "Exiting".
       exit 1
@@ -39,6 +41,8 @@ function populate_host_vars() {
     fi
   fi
   i=0
+  echo "populating user_creds into host_vars files"
+  set +e
   while read p ; do
       host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${i}
       if [ -f ${host_var_file} ]; then
@@ -53,14 +57,19 @@ function populate_host_vars() {
           break
       fi
   done < ${REPO_FOLDER}/ansible/user-passwords.txt
+  set -e
 }
 
 function wait_for_sms_boot() {
   for ip in ${OHPC_IP4}; do
+    set +e
+    echo -ne "waiting on ${ip} to take an ssh connection."
     while ! ssh-keyscan ${ip} >& /dev/null; do
-      echo waiting on ${ip} to take an ssh connection
+      echo -ne "."
       sleep 5
     done
+    echo ""
+    set -e
   done
 }
 
