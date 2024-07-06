@@ -128,7 +128,8 @@ resource "openstack_compute_instance_v2" "ohpc-btig-login" {
 }
 
 locals {
-  compute_nodes = setproduct(range(var.n_students+1), range(var.nodes_per_cluster))
+  compute_nodes = setproduct(range(var.n_students+1), range(var.cpu_nodes_per_cluster))
+  gpu_nodes = setproduct(range(var.n_students+1), range(var.gpu_nodes_per_cluster))
 }
 
 resource "openstack_compute_instance_v2" "node" {
@@ -161,5 +162,38 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-node" {
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].id
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 256 + 1 + each.value.node_number)
+  }
+}
+
+resource "openstack_compute_instance_v2" "gpunode" {
+  for_each = {
+    for node in local.gpu_nodes : "cluster${node[0]}-gpunode${node[1]}" => {
+      cluster_number = node[0]
+      node_number = node[1]
+    }
+  }
+  name = "cluster${each.value.cluster_number}-gpunode${each.value.node_number}"
+  image_name = "efi-ipxe"
+  flavor_name = "g3.small"
+  network {
+    port = openstack_networking_port_v2.ohpc-btig-port-internal-gpunode["cluster${each.value.cluster_number}-gpunode${each.value.node_number}"].id
+  }
+}
+
+resource "openstack_networking_port_v2" "ohpc-btig-port-internal-gpunode" {
+  for_each = {
+    for node in local.gpu_nodes : "cluster${node[0]}-gpunode${node[1]}" => {
+      cluster_number = node[0]
+      node_number = node[1]
+    }
+  }
+  name               = "ohpc-btig-port-internal-cluster${each.value.cluster_number}-gpunode${each.value.node_number}"
+  admin_state_up     = "true"
+  network_id         = openstack_networking_network_v2.ohpc-btig-internal-network[each.value.cluster_number].id
+  # https://access.redhat.com/solutions/2428301
+  port_security_enabled = false
+  fixed_ip {
+      subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].id
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 256 + var.cpu_nodes_per_cluster + 1 + each.value.node_number)
   }
 }
