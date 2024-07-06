@@ -102,6 +102,17 @@ resource "openstack_compute_instance_v2" "ohpc-btig-sms" {
     EOF
 }
 
+resource "openstack_blockstorage_volume_v3" "opt-ohpc" {
+  count = var.n_students+1
+  size  = 100
+}
+
+resource "openstack_compute_volume_attach_v2" "opt-ohpc-attach" {
+  count       = var.n_students+1
+  instance_id = openstack_compute_instance_v2.ohpc-btig-sms[count.index].id
+  volume_id   = openstack_blockstorage_volume_v3.opt-ohpc[count.index].id
+}
+
 resource "openstack_compute_instance_v2" "ohpc-btig-login" {
   count = var.n_students+1
   name = "login-${count.index}"

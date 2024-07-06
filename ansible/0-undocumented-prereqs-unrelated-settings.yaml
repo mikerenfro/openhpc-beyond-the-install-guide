@@ -29,3 +29,30 @@
       ansible.builtin.service:
         name: sshd
         state: reloaded
+    - name: Create a new primary partition for LVM
+      community.general.parted:
+        device: /dev/sdb
+        number: 1
+        flags: [ lvm ]
+        state: present
+    - name: Create a volume group on top of /dev/sdb1
+      community.general.lvg:
+        vg: vg.ohpc
+        pvs: /dev/sdb1
+        pvresize: true
+    - name: Create a logical volume taking all the space in the vg
+      community.general.lvol:
+        vg: vg.ohpc
+        lv: lv.ohpc
+        shrink: false
+        size: 100%FREE
+    - name: Create a filesystem on the vg
+      community.general.filesystem:
+        fstype: xfs
+        dev: /dev/vg.ohpc/lv.ohpc
+    - name: Mount /opt/ohpc
+      ansible.posix.mount:
+        path: /opt/ohpc
+        src: /dev/vg.ohpc/lv.ohpc
+        fstype: xfs
+        state: mounted
