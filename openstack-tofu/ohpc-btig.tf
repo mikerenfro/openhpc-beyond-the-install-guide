@@ -98,6 +98,7 @@ resource "openstack_compute_instance_v2" "ohpc-btig-sms" {
     #!/bin/bash
     passwd -d root
     rm -v /root/.ssh/authorized_keys
+    yum -q -y update --exclude='kernel*'
     EOF
 }
 
