@@ -18,6 +18,10 @@ resource "openstack_networking_floatingip_v2" "ohpc-btig-floating-ip-sms" {
   count = var.n_students+1
   pool  = "public"
 }
+resource "openstack_networking_floatingip_v2" "ohpc-btig-floating-ip-login" {
+  count = var.n_students+1
+  pool  = "public"
+}
 resource "openstack_networking_port_v2" "ohpc-btig-port-external-sms" {
   count          = var.n_students+1
   name           = "ohpc-btig-port-external-sms-${count.index}"
@@ -30,10 +34,27 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-external-sms" {
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-external-subnet.cidr, 256+count.index)
   }
 }
+resource "openstack_networking_port_v2" "ohpc-btig-port-external-login" {
+  count          = var.n_students+1
+  name           = "ohpc-btig-port-external-login-${count.index}"
+  admin_state_up = "true"
+  network_id     = openstack_networking_network_v2.ohpc-btig-external-network.id
+
+  security_group_ids = [openstack_networking_secgroup_v2.ohpc-btig-ssh-icmp.id]
+  fixed_ip {
+      subnet_id  = openstack_networking_subnet_v2.ohpc-btig-external-subnet.id
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-external-subnet.cidr, 384+count.index)
+  }
+}
 resource "openstack_networking_floatingip_associate_v2" "ohpc-btig-floating-ip-associate-sms" {
   count       = var.n_students+1
   floating_ip = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms[count.index].address
   port_id     = openstack_networking_port_v2.ohpc-btig-port-external-sms[count.index].id
+}
+resource "openstack_networking_floatingip_associate_v2" "ohpc-btig-floating-ip-associate-login" {
+  count       = var.n_students+1
+  floating_ip = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-login[count.index].address
+  port_id     = openstack_networking_port_v2.ohpc-btig-port-external-login[count.index].id
 }
 resource "openstack_networking_port_v2" "ohpc-btig-port-internal-sms" {
   name           = "ohpc-btig-port-internal-sms-${count.index}"
@@ -46,6 +67,19 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-sms" {
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[count.index].id
       ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[count.index].cidr, 1)
+  }
+}
+resource "openstack_networking_port_v2" "ohpc-btig-port-internal-login" {
+  name           = "ohpc-btig-port-internal-login-${count.index}"
+  count          = var.n_students+1
+  admin_state_up = "true"
+  network_id = openstack_networking_network_v2.ohpc-btig-internal-network[count.index].id
+
+  # https://access.redhat.com/solutions/2428301
+  port_security_enabled = false
+  fixed_ip {
+      subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[count.index].id
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[count.index].cidr, 2)
   }
 }
 resource "openstack_compute_instance_v2" "ohpc-btig-sms" {
@@ -65,6 +99,20 @@ resource "openstack_compute_instance_v2" "ohpc-btig-sms" {
     passwd -d root
     rm -v /root/.ssh/authorized_keys
     EOF
+}
+
+resource "openstack_compute_instance_v2" "ohpc-btig-login" {
+  count = var.n_students+1
+  name = "login-${count.index}"
+  flavor_name = "m3.small"
+  image_name = "efi-ipxe"
+  # For now, flip the usual order of network connections so that login can provision from eth0
+  network {
+    port = openstack_networking_port_v2.ohpc-btig-port-internal-login[count.index].id
+  }
+  network {
+    port = openstack_networking_port_v2.ohpc-btig-port-external-login[count.index].id
+  }
 }
 
 locals {
