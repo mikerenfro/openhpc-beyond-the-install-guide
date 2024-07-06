@@ -1,0 +1,36 @@
+- name: Z. Post-recipe.sh
+  hosts: ohpc
+  become: true
+  tasks:
+    - name: Set timezone in CHROOT
+      ansible.builtin.shell: |
+        chroot /opt/ohpc/admin/images/rocky9.4 ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
+    - name: Rebuild CHROOT
+      ansible.builtin.shell: wwvnfs --chroot /opt/ohpc/admin/images/rocky9.4
+    - name: Check for duplicate ReturnToService lines in /etc/slurm/slurm.conf
+      ansible.builtin.shell: |
+        grep -c '^ReturnToService' /etc/slurm/slurm.conf
+      register: returntoservice_lines
+      changed_when: false
+      ignore_errors: true
+    - name: Remove duplicate ReturnToService line from /etc/slurm/slurm.conf
+      ansible.builtin.shell: |
+        sed -i '0,/ReturnToService=/{/ReturnToService=/d;}' /etc/slurm/slurm.conf
+      when: returntoservice_lines.stdout.find('1') == -1
+      # https://stackoverflow.com/a/23697254
+    - name: Create /var/log/slurmctld.log
+      ansible.builtin.file:
+        path: /var/log/slurmctld.log
+        state: touch
+        owner: slurm
+        group: slurm
+        mode: '0640'
+    - name: Restart slurmctld
+      ansible.builtin.service:
+        name: slurmctld
+        state: restarted
+    - name: Grab ssh keys from compute nodes
+      ansible.builtin.shell: |
+        for n in $(seq 1 {{ num_computes }}); do key=$(ssh-keyscan -t ed25519 172.16.1.${n} 2>/dev/null); echo c${n},$key; done > /etc/ssh/ssh_known_hosts
+    - name: Restart compute nodes
+      ansible.builtin.shell: pdsh -w c[1-{{ num_computes }}] reboot

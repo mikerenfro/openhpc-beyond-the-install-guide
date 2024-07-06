@@ -1,0 +1,88 @@
+- name: A. Installation Template
+  hosts: ohpc
+  become: true
+  tasks:
+    - name: Make copy of input.local
+      ansible.builtin.copy:
+        src: /opt/ohpc/pub/doc/recipes/rocky9/input.local
+        dest: /root/input.local
+        remote_src: yes
+        force: false
+    - name: Set provision_wait value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "provision_wait=1"
+        search_string: "provision_wait="
+    - name: Set num_computes value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "num_computes={{ num_computes }}"
+        search_string: "num_computes="
+    - name: Replace MAC addresses in input.local
+      include_tasks: replace_mac.yaml
+      loop: "{{ compute_nodes }}"
+      loop_control:
+        index_var: my_idx
+    - name: Set slurm_node_config value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: 'slurm_node_config="NodeName=${compute_prefix}[1-${num_computes}] CPUs=2 Boards=1 SocketsPerBoard=2 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=5912"'
+        search_string: "slurm_node_config="
+    - name: Set update_slurm_nodeconfig value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "update_slurm_nodeconfig=1"
+        search_string: "update_slurm_nodeconfig="
+    - name: Set sms_name value in input.local
+      ansible.builtin.lineinfile:
+        path: /root/input.local
+        line: "sms_name={{ ansible_hostname }}"
+        search_string: "sms_name="
+
+    - name: Make copy of recipe.sh
+      ansible.builtin.copy:
+        src: /opt/ohpc/pub/doc/recipes/rocky9/x86_64/warewulf/slurm/recipe.sh
+        dest: /root/recipe.sh
+        mode: '0755'
+        remote_src: yes
+        force: false
+    - name: Correct CHROOT path in recipe.sh
+      ansible.builtin.replace:
+        path: /root/recipe.sh
+        regexp: 'rocky9.3'
+        replace: 'rocky9.4'
+    - name: Remove exports commands in recipe.sh
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        state: absent
+        regexp: "/etc/exports"
+    - name: Add lines to /etc/exports
+      ansible.builtin.lineinfile:
+        path: /etc/exports
+        line: "{{ item.path }} {{ ansible_eth1.ipv4.network }}/{{ ansible_eth1.ipv4.prefix }}(rw,no_subtree_check,fsid={{ item.fsid }}{{ item.options }})"
+      loop:
+        - { path: '/home', fsid: '10' , options: ',no_root_squash' }
+        - { path: '/opt/ohpc/pub', fsid: '11' , options: '' }
+    - name: Remove pdsh commands in recipe.sh
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        state: absent
+        regexp: "^pdsh"
+    - name: Enable slurmd and munge in chroot before VNFS build
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        insertbefore: "^wwvnfs"
+        line: chroot $CHROOT systemctl enable slurmd munge
+    - name: Remove chrony.conf commands in recipe.sh
+      ansible.builtin.lineinfile:
+        path: /root/recipe.sh
+        state: absent
+        regexp: " /etc/chrony.conf"
+    - name: Add lines to /etc/chrony.conf
+      ansible.builtin.lineinfile:
+        path: /etc/chrony.conf
+        line: "{{ item }}"
+      loop:
+        - "local stratum 10"
+        - "server 0.centos.pool.ntp.org"
+        - "allow {{ ansible_eth1.ipv4.network }}/{{ ansible_eth1.ipv4.prefix }}"

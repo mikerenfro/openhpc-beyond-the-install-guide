@@ -1,0 +1,24 @@
+- name: 3. Install OpenHPC Components
+  hosts: ohpc
+  become: true
+  tasks:
+    - name: 3.1 Install OHPC release
+      ansible.builtin.yum:
+        name: http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
+        disable_gpg_check: true
+    - name: Check if crb repository is enabled
+      ansible.builtin.shell: |
+        dnf repolist crb | grep -q enabled
+      register: crb_enabled
+      changed_when: false
+      ignore_errors: true
+    - name: Ensure the crb repository is enabled
+      ansible.builtin.shell: |
+        dnf install -y dnf-plugins-core
+        dnf config-manager --set-enabled crb
+      when: crb_enabled is failed
+    - name: 3.2 Install OHPC docs for install script
+      ansible.builtin.package:
+        name:
+          - docs-ohpc
+        state: latest

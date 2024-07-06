@@ -1,0 +1,10 @@
+- name: A1. Run recipe.sh
+  hosts: ohpc
+  become: true
+  tasks:
+    - name: Run recipe.sh script
+      ansible.builtin.shell: OHPC_INPUT_LOCAL=/root/input.local /root/recipe.sh
+      async: 720
+      poll: 10
+      args:
+        creates: /etc/slurm/slurm.conf

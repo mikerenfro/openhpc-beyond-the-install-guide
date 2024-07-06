@@ -1,0 +1,13 @@
+/openstack-tofu/.terraform/
+/openstack-tofu/.terraform.lock.hcl
+/openstack-tofu/.terraform.tfstate.lock.info
+.vagrant/
+/openstack-tofu/app-cred-*-openrc.sh
+/openstack-tofu/disk.img
+/openstack-tofu/local.tf
+/ansible/local.ini
+/ansible/host_vars/
+/ansible/user-passwords.txt
+/openstack-tofu/ssh_key.tf
+/openstack-tofu/terraform.tfstate
+/openstack-tofu/terraform.tfstate.backup
