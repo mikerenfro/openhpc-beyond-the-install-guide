@@ -11,6 +11,7 @@
         installroot: /opt/ohpc/admin/images/rocky9.4
       loop:
         - nano
+        - yum
     - name: Rebuild CHROOT
       ansible.builtin.shell: wwvnfs --chroot /opt/ohpc/admin/images/rocky9.4
     - name: Check for duplicate ReturnToService lines in /etc/slurm/slurm.conf
