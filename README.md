@@ -179,10 +179,11 @@ This will probably take around 10 minutes to run, and multiple management nodes 
 This playbook fixes a few things that can only be done after `recipe.sh` has run:
 
 1. Setting the timezone in the chroot to `America/New_York` and rebuilding the chroot.
-2. Removing duplicate `ReturnToService` lines from `/etc/slurm/slurm.conf` (will be unnecessary after an OpenHPC release including [PR 1994](https://github.com/openhpc/ohpc/pull/1994)) is announced).
-3. Creating `/var/log/slurmctld.log` with correct ownership and permissions.
-4. Storing host ssh keys from the compute nodes in the management node's `/etc/ssh/ssh_known_hosts` to eliminate warnings on first ssh connections to the compute nodes.
-5. Rebooting the compute nodes to apply the updated system image from item 1.
+2. Adding `nano` to the chroot, for those who don't like `vi`.
+3. Removing duplicate `ReturnToService` lines from `/etc/slurm/slurm.conf` (will be unnecessary after an OpenHPC release including [PR 1994](https://github.com/openhpc/ohpc/pull/1994)) is announced).
+4. Creating `/var/log/slurmctld.log` with correct ownership and permissions.
+5. Storing host ssh keys from the compute nodes in the management node's `/etc/ssh/ssh_known_hosts` to eliminate warnings on first ssh connections to the compute nodes.
+6. Rebooting the compute nodes to apply the updated system image from item 1.
 
 # Testing the workshop environment
 

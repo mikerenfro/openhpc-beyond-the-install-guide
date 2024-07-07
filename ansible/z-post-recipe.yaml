@@ -5,6 +5,12 @@
     - name: Set timezone in CHROOT
       ansible.builtin.shell: |
         chroot /opt/ohpc/admin/images/rocky9.4 ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
+    - name: Add quality of life packages to CHROOT
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        installroot: /opt/ohpc/admin/images/rocky9.4
+      loop:
+        - nano
     - name: Rebuild CHROOT
       ansible.builtin.shell: wwvnfs --chroot /opt/ohpc/admin/images/rocky9.4
     - name: Check for duplicate ReturnToService lines in /etc/slurm/slurm.conf
