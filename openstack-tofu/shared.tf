@@ -88,6 +88,10 @@ output "ohpc-btig-sms-ipv4" {
   value = openstack_networking_floatingip_v2.ohpc-btig-floating-ip-sms[*].address
 }
 
+output "ohpc-btig-sms-names" {
+  value = openstack_compute_instance_v2.ohpc-btig-sms[*].name
+}
+
 ### Show the compute nodes' hostnames and MAC addresses
 output "ohpc-btig-macs" {
   value = {

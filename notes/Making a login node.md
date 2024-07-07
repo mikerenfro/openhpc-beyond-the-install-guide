@@ -163,14 +163,21 @@ We could redirect a `wwsh provision print c1 | grep = | cut -d: -f2-` and a `wws
 [user1@sms-0 ~]$
 ```
 
-which shows there are zero provisioning differences between a compute node and the login node.
+We can also make a shell function to cut down on typing:
+```
+[user1@sms-0 ~]$ function proprint() { wwsh provision print $@ | grep = | cut -d: -f2- ; }
+[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
+[user1@sms-0 ~]$
+```
+
+Either of those shows there are zero provisioning differences between a compute node and the login node.
 
 Add a file to login's `FILES` property with `sudo wwsh -y provision set login --fileadd=slurm.conf.login` (refer to section 3.9.3 of the install guide for previous examples of `--fileadd`).
 
 Rerun the previous diff command to see what's changed:
 
 ```
-[user1@sms-0 ~]$ diff -u <(wwsh provision print c1 | grep = | cut -d: -f2-) <(wwsh provision print login | grep = | cut -d: -f2-)
+[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
 --- /dev/fd/63  2024-07-06 11:11:07.682959677 -0400
 +++ /dev/fd/62  2024-07-06 11:11:07.683959681 -0400
 @@ -2,7 +2,7 @@
@@ -211,18 +218,12 @@ Jul 06 18:12:17 login systemd[1]: Slurm node daemon was skipped because of an un
 ```
 
 The `systemctl edit` command resulted in a file `/etc/systemd/system/slurmd.service.d/override.conf`.
-Let's make a place for it in the chroot on the SMS, copy the file over from the login node, and rebuild the VNFS (after we add `nano` to the default compute image for those who don't like `vi`).
+Let's make a place for it in the chroot on the SMS, copy the file over from the login node, and rebuild the VNFS.
 Finally, we'll reboot both the login node and a compute node to test the changes.
 ```
 [user1@sms-0 ~]$ sudo mkdir -p /opt/ohpc/admin/images/rocky9.4/etc/systemd/system/slurmd.service.d/
 [user1@sms-0 ~]$ sudo scp login:/etc/systemd/system/slurmd.service.d/override.conf /opt/ohpc/admin/images/rocky9.4/etc/systemd/system/slurmd.service.d/
 override.conf                                 100%   23    36.7KB/s   00:00
-[user1@sms-0 ~]$ sudo yum -y install --installroot=/opt/ohpc/admin/images/rocky9.4 nano
-...
-Installed:
-  nano-5.6.1-5.el9.x86_64
-
-Complete!
 [user1@sms-0 ~]$ sudo wwvnfs --chroot=/opt/ohpc/admin/images/rocky9.4
 Using 'rocky9.4' as the VNFS name
 ...

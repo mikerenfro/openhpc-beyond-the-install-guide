@@ -2,12 +2,20 @@
   hosts: ohpc
   become: true
   tasks:
+    - name: Make copy of recipe.sh
+      ansible.builtin.copy:
+        src: /opt/ohpc/pub/doc/recipes/rocky9/x86_64/warewulf/slurm/recipe.sh
+        dest: /root/recipe.sh
+        mode: '0755'
+        remote_src: yes
+        force: false
     - name: Make copy of input.local
       ansible.builtin.copy:
         src: /opt/ohpc/pub/doc/recipes/rocky9/input.local
         dest: /root/input.local
         remote_src: yes
         force: false
+
     - name: Set provision_wait value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local
@@ -19,10 +27,13 @@
         line: "num_computes={{ num_computes }}"
         search_string: "num_computes="
     - name: Replace MAC addresses in input.local
-      include_tasks: replace_mac.yaml
-      loop: "{{ compute_nodes }}"
-      loop_control:
-        index_var: my_idx
+      block:
+        - name: Actually replace MAC addresses
+          include_tasks: replace_mac.yaml
+          loop: "{{ compute_nodes }}"
+          loop_control:
+            index_var: my_idx
+      when: compute_nodes is defined
     - name: Set slurm_node_config value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local
@@ -39,13 +50,6 @@
         line: "sms_name={{ ansible_hostname }}"
         search_string: "sms_name="
 
-    - name: Make copy of recipe.sh
-      ansible.builtin.copy:
-        src: /opt/ohpc/pub/doc/recipes/rocky9/x86_64/warewulf/slurm/recipe.sh
-        dest: /root/recipe.sh
-        mode: '0755'
-        remote_src: yes
-        force: false
     - name: Correct CHROOT path in recipe.sh
       ansible.builtin.replace:
         path: /root/recipe.sh

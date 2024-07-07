@@ -10,17 +10,21 @@ function remove_old_keys() {
 }
 
 function populate_host_vars() {
+  echo "Populating host_vars for clusters: ${CLUSTER_NUMBERS}"
   for n in $CLUSTER_NUMBERS; do
       host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${n}
       echo ${host_var_file}
-      echo "compute_nodes:" > ${host_var_file}
-      i=1
-      for j in $(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
-          mac=$(tofu output -json ohpc-btig-macs | jq -r ".[$j][0]")
-          echo "- { name: \"c${i}\", mac: \"${mac}\" }" >> ${host_var_file}
-          ((i++))
-      done
+      echo > ${host_var_file}
       num_computes=$(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))" | wc -l)
+      if [ ${num_computes} -gt 0 ]; then
+        echo "compute_nodes:" >> ${host_var_file}
+        i=1
+        for j in $(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
+            mac=$(tofu output -json ohpc-btig-macs | jq -r ".[$j][0]")
+            echo "- { name: \"c${i}\", mac: \"${mac}\" }" >> ${host_var_file}
+            ((i++))
+        done
+      fi
       echo "num_computes: ${num_computes}" >> ${host_var_file}
   done
 
@@ -75,6 +79,6 @@ function wait_for_sms_boot() {
 
 function get_cluster_ips_counts() {
   OHPC_IP4=$(tofu output -json ohpc-btig-sms-ipv4 | jq -r '.[]')
-  CLUSTER_NUMBERS=$(tofu output -json ohpc-btig-macs | jq -r 'keys[] as $k | "\($k)"' | cut -d- -f1 | sort | uniq | sed 's/cluster//g' | sort -n)
+  CLUSTER_NUMBERS=$(tofu output -json ohpc-btig-sms-names | jq -r 'keys[] as $k | "\($k)"' | sort -n | uniq)
   CLUSTER_COUNT=$(echo ${CLUSTER_NUMBERS} | wc -w)
 }
