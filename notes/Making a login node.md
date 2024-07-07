@@ -1,4 +1,4 @@
-# Making a login node
+# (Mostly) Making a login node
 
 Assumptions:
 1. the instance is already connected to the internal network on eth0 and to the external network on eth1.
@@ -30,10 +30,11 @@ sinfo: fatal: Could not establish a configuration source
 
 So there's no entry for login in the SMS `slurm.conf`. To fix that:
 
-1. Run `slurmd -C` on the login node to capture its correct CPU specifications.
-2. Make a new entry in the SMS `slurm.conf` of `NodeName=login` followed by all the `slurmd -C` output from the previous step.
-3. Reload the new Slurm configuration everywhere (well, everywhere functional) with `sudo scontrol reconfigure` on the SMS.
-4. ssh back to the login node and restart slurmd, since it wasn't able to respond to the `scontrol reconfigure` from the previous step (`sudo ssh login systemctl restart slurmd` on the SMS).
+1. Run `slurmd -C` on the login node to capture its correct CPU specifications. Copy that line to your laptop's clipboard.
+2. On the SMS, run `nano /etc/slurm/slurm/slurm.conf` and make a new line of all the `slurmd -C` output from the previous step (pasted from your laptop clipboard).
+3. Save and exit `nano` by pressing `Ctrl-X` and then Enter.
+4. Reload the new Slurm configuration everywhere (well, everywhere functional) with `sudo scontrol reconfigure` on the SMS.
+5. ssh back to the login node and restart slurmd, since it wasn't able to respond to the `scontrol reconfigure` from the previous step (`sudo ssh login systemctl restart slurmd` on the SMS).
 
 Now an `sinfo` should work on the login node:
 
@@ -47,7 +48,7 @@ normal*      up 1-00:00:00      1   idle c1
 
 The `slurmd` service is really only needed on systems that will be running computational jobs, and the login node is not in that category.
 
-Running `slurmd` like the other nodes means the login node can get all its information from the SMS, but we can do the same thing with a very short customized slurm.conf:
+Running `slurmd` like the other nodes means the login node can get all its information from the SMS, but we can do the same thing with a very short customized `slurm.conf` with two lines from the SMS' `slurm.conf`:
 
 ```
 ClusterName=cluster
@@ -76,10 +77,10 @@ normal*      up 1-00:00:00      1   idle c1
 Let's reproduce the changes we made interactively on the login node in the Warewulf settings on the SMS.
 
 For the customized `slurm.conf` file, we can keep a copy of it on the SMS and add it to the Warewulf file store.
-We've done that previously for files like the shared `munge.key` for all cluster nodes.
+We've done that previously for files like the shared `munge.key` for all cluster nodes (see section 3.8.5 of the OpenHPC install guide).
 We also need to make sure that file is part of the login node's provisioning settings.
 
-On the SMS (refer to section 3.8.5 of the install guide for previous examples of `wwsh file`):
+On the SMS:
 ```
 [user1@sms-0 ~]$ sudo scp login:/etc/slurm/slurm.conf /etc/slurm/slurm.conf.login
 slurm.conf                                    100%   40    57.7KB/s   00:00
@@ -155,16 +156,17 @@ Now all the lines are prefixed with `c1:`, and I want to keep everything after t
  BOOTLOCAL        = FALSE
 ```
 
-We could redirect a `wwsh provision print c1 | grep = | cut -d: -f2-` and a `wwsh provision print login | grep = | cut -d: -f2-` to files and diff the files, or we can use the shell's `<()` operator to treat command output as a file:
-
-```
-[user1@sms-0 ~]$ diff -u <(wwsh provision print c1 | grep = | cut -d: -f2-) <(wwsh provision print login | grep = | cut -d: -f2-)
-[user1@sms-0 ~]$
-```
-
-We can also make a shell function to cut down on typing:
+We may be typing that command pipeline a lot, so let's make a shell function to cut down on typing:
 ```
 [user1@sms-0 ~]$ function proprint() { wwsh provision print $@ | grep = | cut -d: -f2- ; }
+[user1@sms-0 ~]$ proprint c1
+...
+```
+
+
+We could redirect a `proprint c1` and a `proprint login` to files and diff the files, or we can use the shell's `<()` operator to treat command output as a file:
+
+```
 [user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
 [user1@sms-0 ~]$
 ```
@@ -190,7 +192,7 @@ Rerun the previous diff command to see what's changed:
   POSTNETDOWN      = FALSE
 ```
 
-For disabling the `slurmd` service, we can take advantage of conditions in the `systemd` service file.
+For disabling the `slurmd` service on just the login node, we can take advantage of conditions in the `systemd` service file.
 Back on the login node as `root`, `systemctl edit slurmd`.
 Insert two lines between the lines of `### Anything between here...` and `### Lines below this comment...`:
 
@@ -262,6 +264,30 @@ PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
 
+We should configure things so that we don't have to resume nodes every time we reboot them.
+
+## More seamless reboots of compute nodes
+
+Slurm doesn't like it when a node gets rebooted without its knowledge.
+There's an `scontrol reboot` option that's handy to have nodes reboot when system updates occur, but it requires a valid setting for `RebootProgram` in `/etc/slurm/slurm.conf`.
+
+By default, Slurm and OpenHPC don't ship with a default `RebootProgram`, so let's make one.
+
+```
+[user1@sms-0 ~]$ grep -i reboot /etc/slurm/slurm.conf
+#RebootProgram=
+[user1@sms-0 ~]$ echo 'RebootProgram="/usr/sbin/shutdown -r now"' | sudo tee -a /etc/slurm/slurm.conf
+[user1@sms-0 ~]$ grep -i reboot /etc/slurm/slurm.conf
+#RebootProgram=
+RebootProgram="/usr/sbin/shutdown -r now"
+[user1@sms-0 ~]$ sudo scontrol reconfigure
+[user1@sms-0 ~]$ sudo scontrol reboot ASAP nextstate=RESUME c1
+```
+
+- `scontrol reboot` will wait for all jobs on a group of nodes to finish before rebooting the nodes.
+- `scontrol reboot ASAP` will immediately put the nodes in a `DRAIN` state, routing all pending jobs to other nodes until the rebooted nodes are returned to service.
+- `scontrol reboot ASAP nextstate=RESUME` will set the nodes to accept jobs after the reboot. `nextstate=DOWN` will lave the nodes in a `DOWN` state if you need to do more work on them before returning them to service.
+
 ## `ssh` changes
 
 What if we ssh to the login node as someone other than root?
@@ -272,7 +298,7 @@ Access denied: user user1 (uid=1001) has no active jobs on this node.
 Connection closed by 172.16.0.2 port 22
 ```
 
-which makes this currently the opposite of a login node.
+which makes this currently the opposite of a login node for normal users.
 This is caused by the `pam_slurm.so` entry at the end of `/etc/pam.d/sshd`, which is invaluable on a normal compute node, but not on a login node.
 On the SMS, you can also do a `diff -u /etc/pam.d/sshd /opt/ohpc/admin/images/rocky9.4/etc/pam.d/sshd` to see that the `pam_slurm.so` is the only difference between the two files.
 
@@ -292,7 +318,7 @@ shadow                  :  rw-r----- 1   root root             1424 /etc/shadow
 slurm.conf.login        :  rw-r--r-- 1   root root               40 /etc/slurm/slurm.conf
 sshd.login              :  rw-r--r-- 1   root root              727 /etc/pam.d/sshd
 [user1@sms-0 ~]$ sudo wwsh -y provision set login --fileadd=sshd.login
-[user1@sms-0 ~]$ diff -u <(wwsh provision print c1 | grep = | cut -d: -f2-) <(wwsh provision print login | grep = | cut -d: -f2-)
+[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
 --- /dev/fd/63	2024-07-06 19:25:21.725067514 -0400
 +++ /dev/fd/62	2024-07-06 19:25:21.726067524 -0400
 @@ -2,7 +2,7 @@
@@ -316,7 +342,9 @@ Reboot the login node and let's see if we can log in as a regular user.
 
 ## Brute-force ssh protection
 
-**THIS MAY NEED TO BE REWRITTEN TO USE A MORE MAINSTREAM KERNEL THAN JETSTREAM2 NORMALLY OFFERS.**
+**Verify if this will work on the SMS with a simple `sudo yum install fail2ban ; sudo systemctl enable fail2ban firewalld`**
+
+**Also work in notes on running both fail2ban and firewalld on the login node**
 
 Look what will show up in the SMS `/var/log/secure` within just a few minutes of having `ssh` enabled on the login node:
 
@@ -329,27 +357,11 @@ Jul  6 11:13:59 login sshd[1190]: Received disconnect from 103.177.95.251 port 5
 Jul  6 11:13:59 login sshd[1190]: Disconnected from invalid user ubuntu 103.177.95.251 port 56186 [preauth]
 ```
 
-Let's stop that by running `fail2ban` on the login node.
+Let's stop that by configuring `fail2ban` on the login node.
 
-### Detour: interactive testing on a node
+Install the fail2ban packages on the login node with `sudo ssh login yum -y install fail2ban` and `sudo ssh login systemctl start fail2ban` (this will also install `firewalld`).
 
-Our compute/login node image is pretty bare-bones, it doesn't have `nano`, `man` pages, or even `yum`/`dnf`.
-
-Let's at least get `yum`/`dnf` installed in the chroot image and reboot the login node.
-
-```
-[user1@sms-0 ~]$ sudo yum install --installroot=/opt/ohpc/admin/images/rocky9.4 yum
-...
-Complete!
-sudo wwvnfs --chroot=/opt/ohpc/admin/images/rocky9.4
-Using 'rocky9.4' as the VNFS name
-...
-
-```
-
-### Back to brute-force ssh protection
-
-Install the fail2ban package in the chroot with: `sudo yum install --installroot=/opt/ohpc/admin/images/rocky9.4 fail2ban` and `sudo chroot /opt/ohpc/admin/images/rocky9.4 systemctl enable fail2ban`
+Install the fail2ban package in the chroot with: `sudo yum install --installroot=/opt/ohpc/admin/images/rocky9.4 fail2ban` and `sudo chroot /opt/ohpc/admin/images/rocky9.4 systemctl enable fail2ban firewalld`
 
 Add the following to the chroot's jail.local file with `sudo nano /opt/ohpc/admin/images/rocky9.4/etc/fail2ban/jail.d/sshd.local`:
 
@@ -372,10 +384,34 @@ Rather than drop in an entirely new rsyslog.conf file that we'd have to maintain
 Let's make one of those for the chroot.
 
 ```
-[rocky@sms-0 ~]$ echo "authpriv.* /var/log/secure" | sudo tee /opt/ohpc/admin/images/rocky9.4/etc/rsyslog.d/authpriv-local.conf
+[user1@sms-0 ~]$ echo "authpriv.* /var/log/secure" | sudo tee /opt/ohpc/admin/images/rocky9.4/etc/rsyslog.d/authpriv-local.conf
 authpriv.* /var/log/secure
-[rocky@sms-0 ~]$ cat /opt/ohpc/admin/images/rocky9.4/etc/rsyslog.d/authpriv-local.conf
+[user1@sms-0 ~]$ cat /opt/ohpc/admin/images/rocky9.4/etc/rsyslog.d/authpriv-local.conf
 authpriv.* /var/log/secure
 ```
 
 Rebuild the chroot with `sudo wwvnfs --chroot=/opt/ohpc/admin/images/rocky9.4` and reboot the login node with `sudo ssh login reboot`.
+
+### Other notes
+
+On SMS, see if the following works:
+
+`sudo yum -y install fail2ban` with `/etc/fail2ban/jail.d/sshd.local` containing:
+
+```
+[sshd]
+enabled = true
+```
+
+followed by:
+```
+sudo systemctl enable fail2ban firewalld
+sudo systemctl start fail2ban firewalld
+```
+
+For the login node, needed to also do:
+```
+[user1@sms-0 ~]$ echo "drivers += kernel/net" | sudo tee -a /etc/warewulf/bootstrap.conf
+[user1@sms-0 ~]$ sudo wwbootstrap `uname -r`
+```
+and reboot to get a better kernel.
