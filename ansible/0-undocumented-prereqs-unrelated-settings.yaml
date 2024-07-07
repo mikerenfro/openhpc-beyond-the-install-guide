@@ -2,16 +2,7 @@
   hosts: ohpc
   become: true
   tasks:
-    - name: Install undocumented package dependencies
-      ansible.builtin.yum:
-        name: s-nail
-    - name: Add demo users/admins to SMS
-      ansible.builtin.user:
-        name: "{{ item.username }}"
-        password: "{{ item.password }}"
-        groups: wheel
-        append: true
-      loop: "{{ user_creds }}"
+    # Jetstream2-specific tweaks
     - name: Ensure wheel users get password-less sudo
       ansible.builtin.lineinfile:
         path: /etc/sudoers.d/91-wheel-nopasswd
@@ -29,16 +20,38 @@
       ansible.builtin.service:
         name: sshd
         state: reloaded
-    - name: Create a new primary partition for LVM
+    - name: Check if /etc/profile.d/z99-lmod-default-modules.sh exists
+      ansible.builtin.stat:
+        path: /etc/profile.d/z99-lmod-default-modules.sh
+      register: lmod_default_modules
+    - name: Ensure lmod doesn't try to load xalt
+      ansible.builtin.shell: |
+        mv /etc/profile.d/z99-lmod-default-modules.sh{,.orig}
+      when: lmod_default_modules.stat.exists
+
+    # Undocumented dependencies for OpenHPC
+    - name: Install undocumented package dependencies for default OpenHPC environment
+      ansible.builtin.yum:
+        name: s-nail
+
+    # Workshop-specific settings
+    - name: Add demo users/admins to SMS
+      ansible.builtin.user:
+        name: "{{ item.username }}"
+        password: "{{ item.password }}"
+        groups: wheel
+        append: true
+      loop: "{{ user_creds }}"
+    - name: Create a new primary partition on second disk for /opt/ohpc
       community.general.parted:
-        device: /dev/sdb
+        device: /dev/disk/by-path/pci-0000:03:00.0-scsi-0:0:0:1
         number: 1
         flags: [ lvm ]
         state: present
-    - name: Create a volume group on top of /dev/sdb1
+    - name: Create a volume group on second disk
       community.general.lvg:
         vg: vg.ohpc
-        pvs: /dev/sdb1
+        pvs: /dev/disk/by-path/pci-0000:03:00.0-scsi-0:0:0:1-part1
         pvresize: true
     - name: Create a logical volume taking all the space in the vg
       community.general.lvol:
@@ -50,7 +63,7 @@
       community.general.filesystem:
         fstype: xfs
         dev: /dev/vg.ohpc/lv.ohpc
-    - name: Mount /opt/ohpc
+    - name: Mount /opt/ohpc on the logical volume
       ansible.posix.mount:
         path: /opt/ohpc
         src: /dev/vg.ohpc/lv.ohpc
