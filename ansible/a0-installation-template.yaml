@@ -8,13 +8,13 @@
         dest: /root/recipe.sh
         mode: '0755'
         remote_src: yes
-        force: false
+        force: true
     - name: Make copy of input.local
       ansible.builtin.copy:
         src: /opt/ohpc/pub/doc/recipes/rocky9/input.local
         dest: /root/input.local
         remote_src: yes
-        force: false
+        force: true
 
     - name: Set provision_wait value in input.local
       ansible.builtin.lineinfile:
@@ -39,11 +39,13 @@
         path: /root/input.local
         line: 'slurm_node_config="NodeName=${compute_prefix}[1-${num_computes}] CPUs=2 Boards=1 SocketsPerBoard=2 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=5912"'
         search_string: "slurm_node_config="
+      when: num_computes > 0
     - name: Set update_slurm_nodeconfig value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local
         line: "update_slurm_nodeconfig=1"
         search_string: "update_slurm_nodeconfig="
+      when: num_computes > 0
     - name: Set sms_name value in input.local
       ansible.builtin.lineinfile:
         path: /root/input.local

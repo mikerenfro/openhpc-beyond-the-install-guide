@@ -54,15 +54,14 @@ ClusterName=cluster
 SlurmctldHost=sms-0
 ```
 
-and stopping/disabling the `slurmd` service.
+(where `sms-0` should be **your** SMS hostname from your handout) and stopping/disabling the `slurmd` service.
 
 #### Interactive testing
 
 1. On the login node as `root`, temporarily stop the `slurmd` service with `systemctl stop slurmd`.
-2. On the login node as `root`, edit `/etc/slurm/slurm.conf` with `vi /etc/slurm/slurm.conf`.
-   1. Hit `i` to go into insert mode,
-   2. Enter the two lines above,
-   3. Hit the `Esc` key, then `:`, then `wq` and Enter.
+2. On the login node as `root`, edit `/etc/slurm/slurm.conf` with `nano /etc/slurm/slurm.conf`
+3. Add the two lines above.
+4. Save and exit `nano` by pressing `Ctrl-X` and then Enter.
 
 Verify that `sinfo` still works without `slurmd` and with the custom `/etc/slurm/slurm.conf`.
 
