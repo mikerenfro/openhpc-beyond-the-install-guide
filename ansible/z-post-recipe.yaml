@@ -40,3 +40,4 @@
         for n in $(seq 1 {{ num_computes }}); do key=$(ssh-keyscan -t ed25519 172.16.1.${n} 2>/dev/null); echo c${n},$key; done > /etc/ssh/ssh_known_hosts
     - name: Restart compute nodes
       ansible.builtin.shell: pdsh -w c[1-{{ num_computes }}] reboot
+      when: num_computes > 0
