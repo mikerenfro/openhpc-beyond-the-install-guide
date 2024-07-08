@@ -194,6 +194,6 @@ resource "openstack_networking_port_v2" "ohpc-btig-port-internal-gpunode" {
   port_security_enabled = false
   fixed_ip {
       subnet_id = openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].id
-      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 256 + var.cpu_nodes_per_cluster + 1 + each.value.node_number)
+      ip_address = cidrhost(openstack_networking_subnet_v2.ohpc-btig-internal-subnet[each.value.cluster_number].cidr, 512 + 1 + each.value.node_number)
   }
 }

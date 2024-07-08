@@ -2,6 +2,15 @@
   hosts: ohpc
   become: true
   tasks:
+    - name: Add GPU nodes
+      ansible.builtin.shell: wwsh -y node new g{{ my_idx+1 }} --ipaddr=172.16.2.{{ my_idx+1 }} --hwaddr={{ item.mac }} -D eth0
+      loop: "{{ gpu_nodes }}"
+      loop_control:
+        index_var: my_idx
+      when: num_gpus > 0
+    - name: Provision GPU nodes
+      ansible.builtin.shell: wwsh -y provision set g[1-{{ num_gpus }}] --vnfs=rocky9.4 --bootstrap=`uname -r` --files=dynamic_hosts,passwd,group,shadow,munge.key,network
+      when: num_gpus > 0
     - name: Set timezone in CHROOT
       ansible.builtin.shell: |
         chroot /opt/ohpc/admin/images/rocky9.4 ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
@@ -39,6 +48,12 @@
     - name: Grab ssh keys from compute nodes
       ansible.builtin.shell: |
         for n in $(seq 1 {{ num_computes }}); do key=$(ssh-keyscan -t ed25519 172.16.1.${n} 2>/dev/null); echo c${n},$key; done > /etc/ssh/ssh_known_hosts
+    - name: Grab ssh keys from gpu nodes
+      ansible.builtin.shell: |
+        for n in $(seq 1 {{ num_gpus }}); do key=$(ssh-keyscan -t ed25519 172.16.2.${n} 2>/dev/null); echo g${n},$key; done > /etc/ssh/ssh_known_hosts
     - name: Restart compute nodes
       ansible.builtin.shell: pdsh -w c[1-{{ num_computes }}] reboot
       when: num_computes > 0
+    - name: Restart gpu nodes
+      ansible.builtin.shell: pdsh -w g[1-{{ num_gpus }}] reboot
+      when: num_gpus > 0
