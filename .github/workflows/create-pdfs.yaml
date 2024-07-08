@@ -24,7 +24,6 @@ jobs:
         id: files_list
         run: |
           echo "files=$(ls *.markdown | sed 's/.markdown//g' | jq -R | jq -s -c)" > $GITHUB_OUTPUT
-        working-directory: ./presentation
     outputs:
       files_list: ${{ steps.files_list.outputs.files }}
 
@@ -36,9 +35,6 @@ jobs:
       matrix:
         file: ${{ fromJSON(needs.list-markdown.outputs.files_list) }}
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: ./presentation
     steps:
       - name: Checkout
         uses: actions/checkout@v4
