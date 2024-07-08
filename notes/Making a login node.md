@@ -394,9 +394,12 @@ Rebuild the chroot with `sudo wwvnfs --chroot=/opt/ohpc/admin/images/rocky9.4` a
 
 ### Other notes
 
-On SMS, see if the following works:
+#### Confirmed working steps on SMS
 
-`sudo yum -y install fail2ban` with `/etc/fail2ban/jail.d/sshd.local` containing:
+sudo yum -y install fail2ban
+sudo systemctl start firewalld
+sudo systemctl enable firewalld
+sudo nano /etc/fail2ban/jail.d/sshd.local
 
 ```
 [sshd]
@@ -405,8 +408,7 @@ enabled = true
 
 followed by:
 ```
-sudo systemctl enable fail2ban firewalld
-sudo systemctl start fail2ban firewalld
+sudo systemctl restart fail2ban
 ```
 
 For the login node, needed to also do:
