@@ -97,8 +97,18 @@ output "ohpc-btig-sms-names" {
 }
 
 ### Show the compute nodes' hostnames and MAC addresses
-output "ohpc-btig-macs" {
+output "ohpc-btig-node-macs" {
   value = {
     for k, node in openstack_compute_instance_v2.node : k => [ node.network[0].mac, node.network[0].fixed_ip_v4 ]
+  }
+}
+output "ohpc-btig-gpunode-macs" {
+  value = {
+    for k, node in openstack_compute_instance_v2.gpunode : k => [ node.network[0].mac, node.network[0].fixed_ip_v4 ]
+  }
+}
+output "ohpc-btig-login-macs" {
+  value = {
+    for k, node in openstack_compute_instance_v2.ohpc-btig-login : k => [ node.network[0].mac, node.network[0].fixed_ip_v4 ]
   }
 }

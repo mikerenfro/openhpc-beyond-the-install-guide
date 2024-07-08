@@ -15,17 +15,26 @@ function populate_host_vars() {
       host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${n}
       echo ${host_var_file}
       echo > ${host_var_file}
-      num_computes=$(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))" | wc -l)
+      num_computes=$(tofu output -json ohpc-btig-node-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))" | wc -l)
       if [ ${num_computes} -gt 0 ]; then
         echo "compute_nodes:" >> ${host_var_file}
         i=1
-        for j in $(tofu output -json ohpc-btig-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
-            mac=$(tofu output -json ohpc-btig-macs | jq -r ".[$j][0]")
+        for j in $(tofu output -json ohpc-btig-node-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
+            mac=$(tofu output -json ohpc-btig-node-macs | jq -r ".[$j][0]")
             echo "- { name: \"c${i}\", mac: \"${mac}\" }" >> ${host_var_file}
             ((i++))
         done
       fi
       echo "num_computes: ${num_computes}" >> ${host_var_file}
+        echo "gpu_nodes:" >> ${host_var_file}
+    i=1
+    for j in $(tofu output -json ohpc-btig-gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
+        mac=$(tofu output -json ohpc-btig-gpunode-macs | jq -r ".[$j][0]")
+        echo "- { name: \"g${i}\", mac: \"${mac}\" }" >> ${host_var_file}
+        ((i++))
+    done
+    num_gpus=$(tofu output -json ohpc-btig-gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))" | wc -l)
+    echo "num_gpus: ${num_gpus}" >> ${host_var_file}
   done
 
   if [ ! -f ${REPO_FOLDER}/ansible/user-passwords.txt ]; then
