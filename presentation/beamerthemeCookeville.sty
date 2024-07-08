@@ -1,0 +1,50 @@
+%\usetheme{split}
+\usetheme{Malmoe}
+\usepackage{tikz}
+\definecolor{TTUpurple}{cmyk}{0.79,0.90,0,0}
+\definecolor{TTUyellow}{cmyk}{0,0.10,1.0,0}
+\usecolortheme{rose}
+\usecolortheme[named=TTUpurple]{structure}
+\setbeamercolor*{structure}{fg=TTUpurple}
+\setbeamercolor*{palette secondary}{fg=TTUyellow}
+\setbeamercolor*{titlelike}{parent=structure}
+%\setbeamercolor*{frametitle}{fg=TTUpurple,bg=white}
+\setbeamercolor*{normal text}{fg=black}
+%\setbeamercolor*{frametitle}{bg=cyan!90}
+\setbeamercolor*{alerted text}{fg=TTUpurple} % used in alert block title and all alerted text
+\setbeamercolor*{example text}{parent=normal text,fg=TTUpurple} % used in example block list symbols
+\setbeamercolor*{block title example}{fg=black,bg=TTUyellow}
+\pgfdeclareimage[height=\paperheight]{techlogo}{TechSignatureSealBlack}
+\usebackgroundtemplate{%
+  \tikz[overlay,remember picture] \node[%
+    opacity=0.05, inner sep=0, at=(current page.center)] {%
+      \includegraphics[height=\paperheight]{TechSignatureSealBlack}%
+      };%
+}%
+% https://tex.stackexchange.com/a/270113/3345
+\setbeamertemplate{frametitle}
+{
+  \ifbeamercolorempty[bg]{frametitle}{}{\nointerlineskip}%
+  \@tempdima=\textwidth%
+  \advance\@tempdima by\beamer@leftmargin%
+  \advance\@tempdima by\beamer@rightmargin%
+  \pgfsetfillopacity{.7}       %<------ fix filling opacity
+  \begin{beamercolorbox}[sep=0.3cm,left,wd=\the\@tempdima]{frametitle}
+    \usebeamerfont{frametitle}%
+    \vbox{}\vskip-1ex%
+    \if@tempswa\else\csname beamer@fteleft\endcsname\fi%
+    \strut\pgfsetfillopacity{1}\insertframetitle\strut\par%  <---- text opacity
+    {%
+      \ifx\insertframesubtitle\@empty%
+      \else%
+      {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle\strut\par}%
+      \fi
+    }%
+    \vskip-1ex%
+    \if@tempswa\else\vskip-.3cm\fi% set inside beamercolorbox... evil here...
+  \end{beamercolorbox}%
+}
+
+\setbeamertemplate{navigation symbols}{}
+% https://tex.stackexchange.com/a/605707/3345
+\setbeamertemplate{page number in head/foot}[totalframenumber]

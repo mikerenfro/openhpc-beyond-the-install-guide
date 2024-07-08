@@ -11,3 +11,4 @@
 /openstack-tofu/ssh_key.tf
 /openstack-tofu/terraform.tfstate
 /openstack-tofu/terraform.tfstate.backup
+/presentation/*-local.pdf
