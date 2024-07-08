@@ -24,6 +24,7 @@ jobs:
         id: files_list
         run: |
           echo "files=$(ls *.markdown | sed 's/.markdown//g' | jq -R | jq -s -c)" > $GITHUB_OUTPUT
+        working-directory: ./presentation
     outputs:
       files_list: ${{ steps.files_list.outputs.files }}
 
@@ -35,24 +36,24 @@ jobs:
       matrix:
         file: ${{ fromJSON(needs.list-markdown.outputs.files_list) }}
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./presentation
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build slides .pdf
-        working-directory: ./presentation
         uses: docker://pandoc/latex:3.2
         with:
           args: --defaults=settings.yaml -o ${{matrix.file}}-slides.pdf ${{matrix.file}}.markdown
 
       - name: Build handouts .pdf
-        working-directory: ./presentation
         uses: docker://pandoc/latex:3.2
         with:
           args: --defaults=settings.yaml -V handout -o ${{matrix.file}}-handouts.pdf ${{matrix.file}}.markdown
 
       - name: Build notes .pdf
-        working-directory: ./presentation
         uses: docker://pandoc/latex:3.2
         with:
           args: --defaults=settings.yaml --metadata=beameroption="show only notes" -o ${{matrix.file}}-notes.pdf ${{matrix.file}}.markdown
