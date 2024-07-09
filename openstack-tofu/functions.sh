@@ -15,12 +15,12 @@ function populate_host_vars() {
       host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${n}
       echo ${host_var_file}
       echo > ${host_var_file}
-      num_computes=$(tofu output -json ohpc-btig-node-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))" | wc -l)
+      num_computes=$(tofu output -json node-macs | jq "keys[] as \$k | \$k | select(match(\"hpc${n}-\"))" | wc -l)
       if [ ${num_computes} -gt 0 ]; then
         echo "compute_nodes:" >> ${host_var_file}
         i=1
-        for j in $(tofu output -json ohpc-btig-node-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
-            mac=$(tofu output -json ohpc-btig-node-macs | jq -r ".[$j][0]")
+        for j in $(tofu output -json node-macs | jq "keys[] as \$k | \$k | select(match(\"hpc${n}-\"))"); do
+            mac=$(tofu output -json node-macs | jq -r ".[$j][0]")
             echo "- { name: \"c${i}\", mac: \"${mac}\" }" >> ${host_var_file}
             ((i++))
         done
@@ -28,12 +28,12 @@ function populate_host_vars() {
       echo "num_computes: ${num_computes}" >> ${host_var_file}
         echo "gpu_nodes:" >> ${host_var_file}
     i=1
-    for j in $(tofu output -json ohpc-btig-gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))"); do
-        mac=$(tofu output -json ohpc-btig-gpunode-macs | jq -r ".[$j][0]")
+    for j in $(tofu output -json gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"hpc${n}-\"))"); do
+        mac=$(tofu output -json gpunode-macs | jq -r ".[$j][0]")
         echo "- { name: \"g${i}\", mac: \"${mac}\" }" >> ${host_var_file}
         ((i++))
     done
-    num_gpus=$(tofu output -json ohpc-btig-gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"cluster${n}-\"))" | wc -l)
+    num_gpus=$(tofu output -json gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"hpc${n}-\"))" | wc -l)
     echo "num_gpus: ${num_gpus}" >> ${host_var_file}
   done
 
@@ -87,7 +87,7 @@ function wait_for_sms_boot() {
 }
 
 function get_cluster_ips_counts() {
-  OHPC_IP4=$(tofu output -json ohpc-btig-sms-ipv4 | jq -r '.[]')
-  CLUSTER_NUMBERS=$(tofu output -json ohpc-btig-sms-names | jq -r 'keys[] as $k | "\($k)"' | sort -n | uniq)
+  OHPC_IP4=$(tofu output -json sms-ipv4 | jq -r '.[]')
+  CLUSTER_NUMBERS=$(tofu output -json sms-names | jq -r 'keys[] as $k | "\($k)"' | sort -n | uniq)
   CLUSTER_COUNT=$(echo ${CLUSTER_NUMBERS} | wc -w)
 }
