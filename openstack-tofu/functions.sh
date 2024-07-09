@@ -14,6 +14,7 @@ function populate_host_vars() {
   for n in $CLUSTER_NUMBERS; do
       host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${n}
       echo ${host_var_file}
+      mkdir -p ${REPO_FOLDER}/ansible/host_vars
       echo > ${host_var_file}
       num_computes=$(tofu output -json node-macs | jq "keys[] as \$k | \$k | select(match(\"hpc${n}-\"))" | wc -l)
       if [ ${num_computes} -gt 0 ]; then
