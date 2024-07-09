@@ -108,6 +108,26 @@ x
 
 ## A dedicated login node
 
+### Assumptions
+
+1. We have a VM named `login`, with no operating system installed.
+2. The `eth0` network interface for `login` is attached to the internal network, and `eth1` is attached to the external network.
+3. The `eth0` MAC address for `login` is known---check the **Login server** section of your handout for that. It's of the format `aa:bb:cc:dd:ee:ff`.
+4. We're logged into the SMS as `user1` or `user2` that has `sudo` privileges.
+
+### Creating a new login node
+
+Working from section 3.9.3 of the install guide:
+```
+[user1@sms-0 ~]$ sudo wwsh -y node new login --ipaddr=172.16.0.2 \
+    --hwaddr=__:__:__:__:__:__ -D eth0
+[user1@sms-0 ~]$ sudo wwsh -y provision set login --vnfs=rocky9.4 \
+    --bootstrap=`uname -r` \
+    --files=dynamic_hosts,passwd,group,shadow,munge.key,network
+```
+
+**Make sure to replace the `__` with the characters from your login node's MAC address!**
+
 ## Semi-stateful node provisioning
 
 ## Management of GPU drivers
