@@ -12,6 +12,10 @@ aspectratio: 169
 theme: Cookeville
 section-titles: false
 toc: false
+header-includes: |
+  \definecolor{TTUpurple}{cmyk}{0.79,0.90,0,0}
+  \definecolor{TTUyellow}{cmyk}{0,0.10,1.0,0}
+  \lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{TTUyellow}}
 ---
 
 # Introduction
@@ -106,6 +110,8 @@ x
 
 ## A bit more security for the SMS
 
+(goind to talk about fail2ban here, maybe also firewalld)
+
 ## A dedicated login node
 
 ### Assumptions
@@ -117,28 +123,40 @@ x
 
 ### Creating a new login node
 
+
 Working from section 3.9.3 of the install guide:
-```
-[user1@sms-0 ~]$ sudo wwsh -y node new login --ipaddr=172.16.0.2 \
-    --hwaddr=__:__:__:__:__:__ -D eth0
-[user1@sms-0 ~]$ sudo wwsh -y provision set login --vnfs=rocky9.4 \
-    --bootstrap=`uname -r` \
-    --files=dynamic_hosts,passwd,group,shadow,munge.key,network
-```
 
 **Make sure to replace the `__` with the characters from your login node's MAC address!**
 
+```
+[user1@sms-0 ~]$ sudo wwsh -y node new login -D eth0 \
+    --ipaddr=172.16.0.2 --hwaddr=__:__:__:__:__:__
+[user1@sms-0 ~]$ sudo wwsh -y provision set login \
+    --vnfs=rocky9.4 --bootstrap=`uname -r` \
+    --files=dynamic_hosts,passwd,group,shadow,munge.key,network
+```
+
 ## Semi-stateful node provisioning
+
+(talking about the gparted and filesystem-related pieces here.)
 
 ## Management of GPU drivers
 
-# Managing system complexity
+(installing GPU drivers -- mostly rsync'ing a least-common-denominator chroot into a GPU-named chroot, copying the NVIDIA installer into the chroot, mounting /proc and /sys, running the installer, umounting /proc and /sys, and building a second VNFS)
+
+# Managing system complexity)
 
 ## Configuration settings for different node types
 
+(have been leading into this a bit with the wwsh file entries, systemd conditions, etc. But here we can also talk about nodes with two drives instead of one, nodes with and without Infiniband, nodes with different provisioning interfaces, etc.)
+
 ## Automation for Warewulf3 provisioning
 
+(here we can show some sample Python scripts where we can store node attributes and logic for managing the different VNFSes)
+
 # Configuring Slurm policies
+
+Can adapt a lot of Mike's CaRCC Emerging Centers talk from a couple years ago for this. Fair share, hard limits on resource consumption, QOSes for limiting number of GPU jobs or similar.
 
 ### Sample slide
 
