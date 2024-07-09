@@ -9,6 +9,18 @@ The goal of this repository is to let instructors or self-learners to construct 
 
 These environments will be using Rocky 9 x86_64, Warewulf 3, and Slurm.
 
+# Who are you?
+
+## I'm someone who wants to *attend* a workshop like this
+
+Most of what's in this README will not be relevant to you.
+It's mostly about setting up the OpenStack infrastructure for hosting an HPC administration training workshop.
+You may be more interested in the [handouts](ohpc-btig-pearc24-handouts.pdf) and [notes](ohpc-btig-pearc24-notes.pdf) PDFs.
+
+## I'm someone who wants to *teach* a workshop like this
+
+Then read on, potential instructor.
+
 # Prerequisites to set this up yourself
 
 1. A copy of this repository.
@@ -73,18 +85,23 @@ variable "n_students" {
     default = 0
 }
 
-variable "nodes_per_cluster" {
+variable "cpu_nodes_per_cluster" {
     type = number
-    default = 1
+    default = 2
+}
+
+variable "gpu_nodes_per_cluster" {
+    type = number
+    default = 2
 }
 ```
 
 1. `outside_ip_range` defines which IPs are allowed ssh and ping access to the HPC management nodes.
 2. `openstack_public_network_id` contains the ID of the "public" network at the edge of your OpenStack environment. On Jetstream2, it can be found by clicking the "public" name at [the Project / Network / Networks](https://js2.jetstream-cloud.org/project/networks/) entry for your project allocation. As I had the same network ID on two different projects on Jetstream2, this may be a constant value for everyone.
-3. `n_students` defines how many student clusters to set up (not including the cluster always set up for the instructors).
-4. `nodes_per_cluster` defines how many compute nodes to set up for each cluster.
+3. `n_students` defines how many student clusters to set up (not including the cluster always set up for the instructors). This can be as low as `0` if you just want a single cluster for the instructor to test things out on.
+4. `cpu_nodes_per_cluster` and `gpu_nodes_per_cluster` define how many compute nodes of each type to set up for each cluster. These can also be set as low as `0` if you only want to work on a management node and a login node.
 
-You may need to increase your project allocation if adding `(n_students+1)*nodes_per_cluster` compute instances would exceed your compute instance limit.
+You may need to increase your project allocation if adding `(n_students+1)*(cpu_nodes_per_cluster+gpu_nodes_per_cluster)` compute instances would exceed your compute instance limit.
 
 ## OpenTofu resource creation
 
@@ -92,11 +109,12 @@ Next, run `./create.sh` in the `/vagrant/openstack-tofu` folder.
 This script will create:
 
 1. A router defining the boundary separating the OpenHPC-related resources and the outside world.
-2. An external network, subnet, and security group connecting all OpenHPC management nodes to the router.
-3. `n_students+1` OpenHPC management nodes named `sms-0` through `sms-N`, running Rocky 9 with 2 cores, 6 GB RAM, 20 GB disk space, and a public IPv4 address.
+2. An external network, subnet, and security group connecting all OpenHPC management nodes and unprovisioned login nodes to the router.
+3. `n_students+1` OpenHPC management nodes named `sms-0` through `sms-M`, running Rocky 9 with 2 cores, 6 GB RAM, 20 GB disk space, and a public IPv4 address.
+3. `n_students+1` unprovisioned login nodes named `login-0` through `login-M`, running Rocky 9 with 2 cores, 6 GB RAM, 20 GB disk space, and a public IPv4 address.
 4. `n_students+1` separate internal networks and subnets to connect compute nodes to the OpenHPC management nodes. These have little to no network security enabled, similar to a purely internal HPC network.
-5. `(n_students+1)*(nodes_per_cluster)` OpenHPC compute nodes named `clusterM-nodeN`, each connected to the correct internal network.
-6. `n_students+1` host entries in `~vagrant/.ssh/config`, which enables `ssh username@sms-N` to automatically connect to the correct manaegment node.
+5. `(n_students+1)*(cpu_nodes_per_cluster)` OpenHPC non-GPU compute nodes named `hpcM-cN` and `(n_students+1)*(gpu_nodes_per_cluster)` OpenHPC GPU compute nodes named `hpcM-gN`, each connected to the correct internal network. These will always ba named `c1` through `cN` and `g1` through `gN` inside OpenHPC.
+6. `n_students+1` host entries in `~vagrant/.ssh/config`, which enables `ssh someuser@sms-N` to automatically connect the instructor to the correct management node.
 
 Additionally, the `create.sh` script will also:
 
