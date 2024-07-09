@@ -9,8 +9,8 @@ SLIDES_OPTS := $(COMMON_OPTS)
 HANDOUT_OPTS := -V handout $(COMMON_OPTS)
 NOTES_OPTS := $(COMMON_OPTS) --metadata=beameroption="show only notes"
 
-all: $(SLIDES) $(HANDOUTS) $(NOTES)
-# all: $(HANDOUTS)
+# all: $(SLIDES) $(HANDOUTS) $(NOTES)
+all: $(HANDOUTS) $(NOTES)
 
 %-slides-local.pdf: %.markdown
 	$(PANDOC) $(SLIDES_OPTS) $^ -o $@

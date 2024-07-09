@@ -16,16 +16,97 @@ toc: false
 
 # Introduction
 
-### Tutorial goals
+## Acknowledgments and shameless plugs
+
+### Acknowledgments and shameless plugs
+
+OpenHPC
+
+: especially Tim Middelkoop (Internet2) and Chris Simmons (Massachusetts Green High Performance Computing Center ). They have a BOF at 1:30 Wednesday. You should go to it.
+
+Jetstream2
+
+: especially Jeremy Fischer, Mike Lowe, and Julian Pistorius. Jetstream2 has a tutorial at the same time as this one. Please stay here.
+
+NSF CC*
+
+: for the equipment that led to some of the lessons we're sharing today (award #2127188).
+
+ACCESS
+
+: current maintainers of the project formerly known as the XSEDE Compatible Basic Cluster.
 
 ::: notes
+x
+:::
+
+## Where we're starting from
+
+### Where we're starting from
+::: {.columns align=center}
+
+::: {.column width=50%}
+![Two example HPC networks]
+
+[Two example HPC networks]: figures/two-networks.png { width=100% }
+:::
+
+::: {.column width=50%}
+31 HPC clusters (2 shown) with:
+
+1. Rocky Linux 9
+2. OpenHPC 3
+3. Warewulf 3
+4. Slurm
+5. 2 non-GPU nodes
+6. 2 GPU nodes (currently without GPU drivers, so: expensive non-GPU nodes)
+7. 1 management node (SMS)
+8. 1 unprovisioned login node
+:::
+
+:::
+
+::: notes
+x
 :::
 
 ### Where we're starting from
 
+We used the OpenHPC automatic installation script from Appendix A with a few variations:
+
+1. Installed `s-nail` to have a valid `MailProg` for `slurm.conf`.
+2. Created `user1` and `user2` accounts with password-less `sudo` privileges.
+3. Changed `CHROOT` from `/opt/ohpc/admin/images/rocky9.3` to `/opt/ohpc/admin/images/rocky9.4`.
+4. Enabled `slurmd` and `munge` in `CHROOT`.
+5. Added `nano` and `yum` to `CHROOT`.
+6. Removed a redundant `ReturnToService` line from `/etc/slurm/slurm.conf`.
+7. Stored all nodes' SSH host keys in `/etc/ssh/ssh_known_hosts`.
+
+::: notes
+x
+:::
+
+## Where we're going
+
+### Where we're going
+
+1. A slightly more secured SMS
+2. A login node that's practically identical to a compute node (except for where it needs to be different)
+3. GPU drivers on the GPU nodes
+4. Using node-local storage for the OS and/or scratch
+5. De-coupling the SMS and the compute nodes (e.g., independent kernel versions)
+6. Easier management of node differences (GPU or not, diskless/single-disk/multi-disk, Infiniband or not, etc.)
+7. Slurm configuration to match some common policy goals (fair share, resource limits, etc.)
+
+::: notes
+x
+:::
+
 # Making better nodes
 
-## Dedicated login nodes
+## A bit more security for the SMS
+
+## A dedicated login node
 
 ## Semi-stateful node provisioning
 
@@ -38,29 +119,6 @@ toc: false
 ## Automation for Warewulf3 provisioning
 
 # Configuring Slurm policies
-
-### Slide title
-
-::: {.columns align=center}
-
-::: {.column width=65%}
-Larger column to the left.
-:::
-
-::: {.column width=35%}
-Smaller column to the right.
-:::
-
-:::
-
-::: notes
-
-This is my note.
-
-- It can contain Markdown
-- like this list
-
-:::
 
 ### Sample slide
 
