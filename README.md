@@ -115,10 +115,11 @@ This script will create:
 1. A router defining the boundary separating the OpenHPC-related resources and the outside world.
 2. An external network, subnet, and security group connecting all OpenHPC management nodes and unprovisioned login nodes to the router.
 3. `n_students+1` OpenHPC management nodes named `sms-0` through `sms-M`, running Rocky 9 with 2 cores, 6 GB RAM, 20 GB disk space, and a public IPv4 address.
-3. `n_students+1` unprovisioned login nodes named `login-0` through `login-M`, running Rocky 9 with 2 cores, 6 GB RAM, 20 GB disk space, and a public IPv4 address.
-4. `n_students+1` separate internal networks and subnets to connect compute nodes to the OpenHPC management nodes. These have little to no network security enabled, similar to a purely internal HPC network.
-5. `(n_students+1)*(cpu_nodes_per_cluster)` OpenHPC non-GPU compute nodes named `hpcM-cN` and `(n_students+1)*(gpu_nodes_per_cluster)` OpenHPC GPU compute nodes named `hpcM-gN`, each connected to the correct internal network. These will always ba named `c1` through `cN` and `g1` through `gN` inside OpenHPC.
-6. `n_students+1` host entries in `~vagrant/.ssh/config`, which enables `ssh someuser@sms-N` to automatically connect the instructor to the correct management node.
+4. `n_students+1` 100 GB OpenStack volumes to store the `/opt/ohpc` directory tree on the management nodes.
+5. `n_students+1` unprovisioned login nodes named `login-0` through `login-M`, running Rocky 9 with 2 cores, 6 GB RAM, 20 GB disk space, and a public IPv4 address.
+6. `n_students+1` separate internal networks and subnets to connect compute nodes to the OpenHPC management nodes. These have little to no network security enabled, similar to a purely internal HPC network.
+7. `(n_students+1)*(cpu_nodes_per_cluster)` OpenHPC non-GPU compute nodes named `hpcM-cN` and `(n_students+1)*(gpu_nodes_per_cluster)` OpenHPC GPU compute nodes named `hpcM-gN`, each connected to the correct internal network. These will always ba named `c1` through `cN` and `g1` through `gN` inside OpenHPC.
+8. `n_students+1` host entries in `~vagrant/.ssh/config`, which enables `ssh someuser@sms-N` to automatically connect the instructor to the correct management node.
 
 Additionally, the `create.sh` script will also:
 
