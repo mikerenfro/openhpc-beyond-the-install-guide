@@ -24,7 +24,11 @@ Then read on, potential instructor.
 # Prerequisites to set this up yourself
 
 1. A copy of this repository.
-2. [Vagrant](https://www.vagrantup.com) on any platform compatible with the Bento project's [rockylinux-9](https://app.vagrantup.com/bento/boxes/rockylinux-9) image. As of 2024-07-09, that's VirtualBox on x86-64 Linux/macOS/Windows, Parallels on x86-64 macOS VMware Workstation on x86-64 Linux/Windows, or VMware Fusion on x86-64 or Apple Silicon macOS.
+2. [Vagrant](https://www.vagrantup.com) on any platform compatible with the Bento project's [rockylinux-9](https://app.vagrantup.com/bento/boxes/rockylinux-9) image. As of 2024-07-09, that's:
+   - VirtualBox on x86-64 Linux/macOS/Windows,
+   - Parallels on x86-64 macOS
+   - VMware Workstation on x86-64 Linux/Windows, or
+   - VMware Fusion on x86-64 or Apple Silicon macOS.
 3. OpenStack CLI and API access (only tested with Jetstream2).
 4. An OpenStack RC file for your OpenStack (e.g., generated from [Setting up application credentials and openrc.sh for the Jetstream2 CLI](https://docs.jetstream-cloud.org/ui/cli/auth/#setting-up-application-credentials-and-openrcsh-for-the-jetstream2-cli)).
 
