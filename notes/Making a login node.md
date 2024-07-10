@@ -194,11 +194,12 @@ Rerun the previous diff command to see what's changed:
 
 For disabling the `slurmd` service on just the login node, we can take advantage of conditions in the `systemd` service file.
 Back on the login node as `root`, `systemctl edit slurmd`.
-Insert two lines between the lines of `### Anything between here...` and `### Lines below this comment...`:
+Insert three lines between the lines of `### Anything between here...` and `### Lines below this comment...`:
 
 ```
 [Unit]
-ConditionHost=c*
+ConditionHost=|c*
+ConditionHost=|g*
 ```
 
 Once that file is saved, try to start the `slurmd` service with `systemctl start slurmd` and check its status with `systemctl status slurmd`:
