@@ -15,7 +15,7 @@ if [[ ! -d ipxe ]] ; then
   ( cd ipxe ; git tag v1.99.0 )
 fi
 
-( cd ipxe/src && make ${IPXE} EMBED=../../boot.ipxe )
+( cd ipxe/src && make CROSS=${ARCH}-linux-gnu- ${IPXE} EMBED=../../boot.ipxe )
 
 echo '--- build partition'
 dd if=/dev/zero of=${DISK}-1 bs=1M count=${SIZE} conv=sparse

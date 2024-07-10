@@ -12,20 +12,33 @@ RUN dnf update -y && \
 COPY repos/opentofu.repo /etc/yum.repos.d/
 RUN yum -y install mtools git gcc tofu python3.12-pip python3.12-devel jq
 
-## Setup
-WORKDIR /vagrant
-COPY openstack-tofu/ /vagrant/openstack-tofu/
-COPY ansible/ /vagrant/ansible/
-COPY tools/ /vagrant/tools/
-
-RUN if [ ! -f /vagrant/openstack-tofu/disk.img ]; then cd /vagrant/openstack-tofu ; bash ../tools/ipxe.sh ; fi && \
-    ls -l /vagrant/openstack-tofu/disk.img
-
+## Tools
 RUN pip3.12 install --user python-openstackclient && \
     pip3.12 install --user ansible && \
-    pip3.12 install --user xkcdpass && \
-    mkdir -p ~/.bashrc.d/ && \
+    pip3.12 install --user xkcdpass
+
+## Cross compiler for arm machines
+RUN dnf install -y epel-release && \
+    dnf install -y gcc-x86_64-linux-gnu
+
+## Setup
+WORKDIR /vagrant
+
+## iPXE (build if needed)
+COPY ipxe/ /vagrant/ipxe/
+RUN if [ ! -f /vagrant/ipxe/disk.img ]; then cd /vagrant/ipxe ; bash ./ipxe.sh ; fi
+
+## Openstack
+COPY openstack-tofu/ /vagrant/openstack-tofu/
+RUN cp /vagrant/ipxe/disk.img /vagrant/openstack-tofu/ && \
+    ls -l /vagrant/openstack-tofu/disk.img
+
+## Ansible
+COPY ansible/ /vagrant/ansible/
+
+## Setup profile
+RUN mkdir -p ~/.bashrc.d/ && \
     cp /vagrant/openstack-tofu/app-cred-*-openrc.sh ~/.bashrc.d/ && \
     echo "unset SSH_AUTH_SOCK" > ~/.bashrc.d/unset_ssh_auth_sock.sh && \
     ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 && \
-    echo "variable "ssh_public_key" {type = string\n default = \"$(cat ~/.ssh/id_ed25519.pub)\"\n } /vagrant/openstack-tofu/ssh_key.tf
+    echo "variable \"ssh_public_key\" { type = string\n default = \"$(cat ~/.ssh/id_ed25519.pub)\"\n }" > /vagrant/openstack-tofu/ssh_key.tf

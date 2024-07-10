@@ -1,0 +1,2 @@
+echo "Rebooting ..."
+reset
