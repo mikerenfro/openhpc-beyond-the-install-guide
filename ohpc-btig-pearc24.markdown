@@ -65,7 +65,7 @@ You:
 Cluster details:
 
 - Rocky Linux 9 (x86_64)
-- OpenHPC 3. Warewulf 3, Slurm
+- OpenHPC 3, Warewulf 3, Slurm
 - 2 non-GPU nodes
 - 2 GPU nodes (currently without GPU drivers, so: expensive non-GPU nodes)
 - 1 management node (SMS)
@@ -422,6 +422,10 @@ wwsh provision print c1 | grep = | cut -d: -f2-
 ```
 Much more useful.
 
+::: notes
+x
+:::
+
 ### Making a function for this
 
 We may be typing that command pipeline a lot, so let's make a shell function to cut down on typing:
@@ -434,6 +438,10 @@ We may be typing that command pipeline a lot, so let's make a shell function to 
 ...
 ```
 
+::: notes
+x
+:::
+
 ### `diff`-ing the outputs
 
 We could redirect a `proprint c1` and a `proprint login` to files and `diff` the resulting files, or we can use the shell's `<()` operator to treat command output as a file:
@@ -445,6 +453,10 @@ We could redirect a `proprint c1` and a `proprint login` to files and `diff` the
 
 Either of those shows there are zero provisioning differences between a compute node and the login node.
 
+::: notes
+x
+:::
+
 ### Adding the custom `slurm.conf` to the login node
 
 Add a file to login's `FILES` property with:
@@ -453,6 +465,10 @@ Add a file to login's `FILES` property with:
   --fileadd=slurm.conf.login
 ```
 (refer to section 3.9.3 of the install guide for previous examples of `--fileadd`).
+
+::: notes
+x
+:::
 
 ### Checking for provisioning differences
 
@@ -474,6 +490,10 @@ Rerun the previous `diff` command to easily see what's changed:
   POSTNETDOWN      = FALSE
 ```
 
+::: notes
+x
+:::
+
 ### Ensuring `slurmd` doesn't run on the login node
 
 To disable the `slurmd` service on just the login node, we can take advantage of conditions in the `systemd` service file.
@@ -492,6 +512,10 @@ ConditionHost=|g*
 ```
 This will only run the service on nodes whose hostnames start with `c` or `g`.
 
+::: notes
+x
+:::
+
 ### Ensuring `slurmd` doesn't run on the login node
 
 Once that file is saved, try to start the `slurmd` service with `systemctl start slurmd` and check its status with `systemctl status slurmd`:
@@ -506,6 +530,10 @@ Jul 06 17:14:16 login systemd[1]: Stopped Slurm node daemon.
 Jul 06 18:12:17 login systemd[1]: Slurm node daemon was skipped
   because of an unmet condition check (ConditionHost=c*).
 ```
+
+::: notes
+x
+:::
 
 ### Making the changes permanent
 
@@ -525,6 +553,10 @@ Let's:
 override.conf                    100%   23    36.7KB/s   00:00
 ```
 
+::: notes
+x
+:::
+
 ### Making the changes permanent
 
 Finally, we'll:
@@ -541,6 +573,10 @@ Total elapsed time                                          : 84.45 s
 [user1@sms-0 ~]$ sudo ssh c1 reboot
 ```
 
+::: notes
+x
+:::
+
 ### Verifying the changes on the login node
 
 Verify that the login node doesn't start `slurmd`, but can still run `sinfo` without any error messages.
@@ -555,6 +591,10 @@ Jul 06 18:26:23 login systemd[1]: Slurm node daemon was
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
+
+::: notes
+x
+:::
 
 ### Verifying the changes on a compute node
 
@@ -574,6 +614,10 @@ normal*      up 1-00:00:00      1   down c1
 ```
 (Yes, `c1` is marked `down`---we'll fix that shortly.)
 
+::: notes
+x
+:::
+
 ### Problem: the login node doesn't let users log in
 
 What if we ssh to the login node as someone other than root?
@@ -585,8 +629,12 @@ Access denied: user user1 (uid=1001) has no active jobs on this
 Connection closed by 172.16.0.2 port 22
 ```
 
-which makes this currently the opposite of a login node for normal users.
+which makes this the exact opposite of a login node for normal users.
 Let's fix that.
+
+::: notes
+x
+:::
 
 ### Making the login node function as a login node
 
@@ -594,11 +642,19 @@ Let's fix that.
 - On the SMS, you can also do a `diff -u /etc/pam.d/sshd ${CHROOT}/etc/pam.d/sshd`
 - You'll see that the `pam_slurm.so` line is the only difference between the two files.
 
+::: notes
+x
+:::
+
 ### Testing a PAM change to the login node
 
 - Temporarily comment out the last line of the login node's `/etc/pam.d/ssh` and see if you can ssh into the login node as a normal user (i.e., `ssh user1@login`).
 - Your user should be able to log in now.
 - In case the PAM configuration won't let root log in, **don't panic**! Instructors can reboot your login node from its console to put it back to its original state.
+
+::: notes
+x
+:::
 
 ### Making the change permanent
 
@@ -612,6 +668,10 @@ Let's fix that.
 ...
 sshd.login :  rw-r--r-- 1   root root      727 /etc/pam.d/sshd
 ```
+
+::: notes
+x
+:::
 
 ### Making the change permanent
 
@@ -629,6 +689,10 @@ sshd.login :  rw-r--r-- 1   root root      727 /etc/pam.d/sshd
 ```
 (refer to section 3.9.3 of the install guide for previous examples of `--fileadd`).
 
+::: notes
+x
+:::
+
 ### Testing the change
 
 Reboot the login node and let's see if we can log in as a regular user.
@@ -638,6 +702,10 @@ Reboot the login node and let's see if we can log in as a regular user.
 [user1@sms-0 ~]$ ssh login
 [user1@login ~]$
 ```
+
+::: notes
+x
+:::
 
 ## A bit more security for the SMS and login nodes
 
@@ -665,11 +733,19 @@ normal*      up 1-00:00:00      1   idle c1
 
 We should configure things so that we don't have to manually resume nodes every time we reboot them.
 
+::: notes
+x
+:::
+
 ### More seamless reboots of compute nodes
 
 - Slurm doesn't like it when a node gets rebooted without its knowledge.
 - There's an `scontrol reboot` option that's handy to have nodes reboot when system updates occur, but it requires a valid setting for `RebootProgram` in `/etc/slurm/slurm.conf`.
 - By default, Slurm and OpenHPC don't ship with a default `RebootProgram`, so let's make one.
+
+::: notes
+x
+:::
 
 ### Adding a valid `RebootProgram`
 
@@ -683,6 +759,10 @@ We should configure things so that we don't have to manually resume nodes every 
 RebootProgram="/sbin/shutdown -r now"
 ```
 
+::: notes
+x
+:::
+
 ### Informing all nodes of the changes and testing it out
 
 ```
@@ -693,6 +773,10 @@ RebootProgram="/sbin/shutdown -r now"
 - `scontrol reboot` will wait for all jobs on a group of nodes to finish before rebooting the nodes.
 - `scontrol reboot ASAP` will immediately put the nodes in a `DRAIN` state, routing all pending jobs to other nodes until the rebooted nodes are returned to service.
 - `scontrol reboot ASAP nextstate=RESUME` will set the nodes to accept jobs after the reboot. `nextstate=DOWN` will lave the nodes in a `DOWN` state if you need to do more work on them before returning them to service.
+
+::: notes
+x
+:::
 
 ### Did it work?
 
@@ -705,6 +789,19 @@ TODO: verify what a successful "return to idle" looks like here, including an up
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
+
+::: notes
+x
+:::
+
+## Decoupling kernels from the SMS
+
+How to install kernels into the chroot and bootstrap from the chroot.
+
+::: notes
+x
+:::
+
 
 ## Semi-stateful node provisioning
 
