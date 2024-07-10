@@ -42,17 +42,17 @@ jobs:
       - name: Build slides .pdf
         uses: docker://pandoc/latex:3.2
         with:
-          args: --defaults=settings.yaml -o ${{matrix.file}}-slides.pdf ${{matrix.file}}.markdown
+          args: --defaults=settings.yaml --listings -o ${{matrix.file}}-slides.pdf ${{matrix.file}}.markdown
 
       - name: Build handouts .pdf
         uses: docker://pandoc/latex:3.2
         with:
-          args: --defaults=settings.yaml -V handout -o ${{matrix.file}}-handouts.pdf ${{matrix.file}}.markdown
+          args: --defaults=settings.yaml --listings -V handout -o ${{matrix.file}}-handouts.pdf ${{matrix.file}}.markdown
 
       - name: Build notes .pdf
         uses: docker://pandoc/latex:3.2
         with:
-          args: --defaults=settings.yaml --metadata=beameroption="show only notes" -o ${{matrix.file}}-notes.pdf ${{matrix.file}}.markdown
+          args: --defaults=settings.yaml --listings --metadata=beameroption="show only notes" -o ${{matrix.file}}-notes.pdf ${{matrix.file}}.markdown
 
       - run: git pull
 

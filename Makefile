@@ -4,7 +4,7 @@ NOTES := $(patsubst %.markdown,%-notes-local.pdf,$(wildcard *.markdown))
 export PATH := /Library/TeX/texbin:$(PATH)
 PANDOC := /usr/local/bin/pandoc
 
-COMMON_OPTS := --defaults=settings.yaml
+COMMON_OPTS := --defaults=settings.yaml --listings
 SLIDES_OPTS := $(COMMON_OPTS)
 HANDOUT_OPTS := -V handout $(COMMON_OPTS)
 NOTES_OPTS := $(COMMON_OPTS) --metadata=beameroption="show only notes"
