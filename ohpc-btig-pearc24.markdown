@@ -65,7 +65,7 @@ You:
 Cluster details:
 
 - Rocky Linux 9 (x86_64)
-- OpenHPC 3, Warewulf 3, Slurm
+- OpenHPC 3.1, Warewulf 3, Slurm 23.11.6
 - 2 non-GPU nodes
 - 2 GPU nodes (currently without GPU drivers, so: expensive non-GPU nodes)
 - 1 management node (SMS)
