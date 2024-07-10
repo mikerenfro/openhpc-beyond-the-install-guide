@@ -26,7 +26,7 @@ header-includes: |
 
 OpenHPC
 
-: especially Tim Middelkoop (Internet2) and Chris Simmons (Massachusetts Green High Performance Computing Center ). They have a BOF at 1:30 Wednesday. You should go to it.
+: especially Tim Middelkoop (Internet2) and Chris Simmons (Massachusetts Green High Performance Computing Center). They have a BOF at 1:30 Wednesday. You should go to it.
 
 Jetstream2
 
@@ -50,22 +50,26 @@ x
 ::: {.columns align=center}
 
 ::: {.column width=50%}
-![Two example HPC networks]
+![Two example HPC networks for the tutorial]
 
-[Two example HPC networks]: figures/two-networks.png { width=90% }
+[Two example HPC networks for the tutorial]: figures/two-networks.png { width=90% }
 :::
 
 ::: {.column width=50%}
-31 HPC clusters (2 shown) with:
 
-1. Rocky Linux 9
-2. OpenHPC 3
-3. Warewulf 3
-4. Slurm
-5. 2 non-GPU nodes
-6. 2 GPU nodes (currently without GPU drivers, so: expensive non-GPU nodes)
-7. 1 management node (SMS)
-8. 1 unprovisioned login node
+You:
+
+- have installed OpenHPC before
+- have been issued a (basically) out-of-the-box OpenHPC cluster for this tutorial
+
+Cluster details:
+
+- Rocky Linux 9 (x86_64)
+- OpenHPC 3. Warewulf 3, Slurm
+- 2 non-GPU nodes
+- 2 GPU nodes (currently without GPU drivers, so: expensive non-GPU nodes)
+- 1 management node (SMS)
+- 1 unprovisioned login node
 :::
 
 :::
@@ -84,7 +88,7 @@ We used the OpenHPC automatic installation script from Appendix A with a few var
 4. Enabled `slurmd` and `munge` in `CHROOT`.
 5. Added `nano` and `yum` to `CHROOT`.
 6. Removed a redundant `ReturnToService` line from `/etc/slurm/slurm.conf`.
-7. Stored all nodes' SSH host keys in `/etc/ssh/ssh_known_hosts`.
+7. Stored all compute/GPU nodes' SSH host keys in `/etc/ssh/ssh_known_hosts`.
 
 ::: notes
 x
@@ -95,7 +99,7 @@ x
 ### Where we're going
 
 1. A login node that's practically identical to a compute node (except for where it needs to be different)
-2. A slightly more secured SMS
+2. A slightly more secured SMS and login node
 3. GPU drivers on the GPU nodes
 4. Using node-local storage for the OS and/or scratch
 5. De-coupling the SMS and the compute nodes (e.g., independent kernel versions)
@@ -106,7 +110,7 @@ x
 x
 :::
 
-# Making better nodes
+# Making better infrastructure nodes
 
 ## A dedicated login node
 
@@ -635,6 +639,18 @@ Reboot the login node and let's see if we can log in as a regular user.
 [user1@login ~]$
 ```
 
+## A bit more security for the SMS and login nodes
+
+**TODO: narrative about checking `/var/log/secure` on the SMS, seeing lots of brute-force SSH attempts for both it and login**
+
+**TODO: Verify if this will work on the SMS with a simple `sudo yum install fail2ban ; sudo systemctl enable fail2ban firewalld`, but we'll also have to ensure that we don't disrupt NFS or other services to the internal network**
+
+::: notes
+x
+:::
+
+# Making better compute nodes
+
 ## More seamless reboots of compute nodes
 
 ### Why was `c1` marked as `down`?
@@ -689,17 +705,6 @@ TODO: verify what a successful "return to idle" looks like here, including an up
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
-
-
-## A bit more security for the SMS and login nodes
-
-**TODO: narrative about checking `/var/log/secure` on the SMS, seeing lots of brute-force SSH attempts for both it and login**
-
-**TODO: Verify if this will work on the SMS with a simple `sudo yum install fail2ban ; sudo systemctl enable fail2ban firewalld`, but we'll also have to ensure that we don't disrupt NFS or other services to the internal network**
-
-::: notes
-x
-:::
 
 ## Semi-stateful node provisioning
 
