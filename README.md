@@ -36,12 +36,13 @@ Then read on, potential instructor.
 
 1. `README.md` is what you're reading now.
 2. `Vagrantfile` provides settings for a consistent environment used to create the Jetstream2 infrastructure for the workshop.
-3. `reference` contains an unmodified copy of OpenHPC's `recipe.sh` and `input.local` files from Appendix A of [OpenHPC (v3.1) Cluster Building Recipes, Rocky 9.3 Base OS, Warewulf/SLURM Edition for Linux (x86 64)](https://github.com/openhpc/ohpc/releases/download/v3.1.GA/Install_guide-Rocky9-Warewulf-SLURM-3.1-x86_64.pdf).
-4. `repos` contains third-party `yum` repositories for the Vagrant VM (currently only for `opentofu`).
-5. `openstack-tofu` contains Terraform/OpenTofu configuration files to build the HPC cluster structure for the instructor and the students, plus shell scripts to exchange data between the configuration output and Ansible.
-6. `ansible` contains Ansible playbooks, inventories, and host variables used to complete configuration of the HPC cluster installation for the instructor and the students.
-7. `.vagrant` will show up after you build the Vagrant VM. Its contents are all ignored.
-8. `.gitignore` controls which files are ignored by `git`. Probably no reason to modify it.
+3. `Containerfile` provides an alternative to the Vagrant-based environment.
+4. `reference` contains an unmodified copy of OpenHPC's `recipe.sh` and `input.local` files from Appendix A of [OpenHPC (v3.1) Cluster Building Recipes, Rocky 9.3 Base OS, Warewulf/SLURM Edition for Linux (x86 64)](https://github.com/openhpc/ohpc/releases/download/v3.1.GA/Install_guide-Rocky9-Warewulf-SLURM-3.1-x86_64.pdf).
+5. `repos` contains third-party `yum` repositories for the Vagrant VM (currently only for `opentofu`).
+6. `openstack-tofu` contains Terraform/OpenTofu configuration files to build the HPC cluster structure for the instructor and the students, plus shell scripts to exchange data between the configuration output and Ansible.
+7. `ansible` contains Ansible playbooks, inventories, and host variables used to complete configuration of the HPC cluster installation for the instructor and the students.
+8. `.vagrant` will show up after you build the Vagrant VM. Its contents are all ignored.
+9. `.gitignore` controls which files are ignored by `git`. Probably no reason to modify it.
 
 # Setting up the workshop
 
