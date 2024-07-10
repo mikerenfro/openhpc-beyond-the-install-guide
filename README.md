@@ -35,6 +35,15 @@ Copy the OpenRC file you got from Jetstream into the `openstack-tofu` folder.
 Make sure the OpenRC file is named to match the wildcard `app-cred-*-openrc.sh`.
 You should only have one OpenRC file in this folder.
 
+## Container Setup (alternative to using Vagrant VM)
+
+Build the container and start it with the following commands (or similar based on your environment)
+```bash
+docker build -t btig-tools --file Containerfile .
+docker run -it --rm btig-tools
+```
+
+
 ## Vagrant VM
 
 Run `vagrant up` from the top-level folder for this repository; this should create a Rocky 9 VM.

@@ -1,0 +1,4 @@
+#!ipxe
+echo === efi-ipxe iPXE autoboot (user-class=efi-ipxe)
+set user-class efi-ipxe
+autoboot
