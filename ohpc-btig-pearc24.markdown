@@ -52,7 +52,7 @@ x
 ::: {.column width=50%}
 ![Two example HPC networks]
 
-[Two example HPC networks]: figures/two-networks.png { width=100% }
+[Two example HPC networks]: figures/two-networks.png { width=90% }
 :::
 
 ::: {.column width=50%}
@@ -503,9 +503,199 @@ Jul 06 18:12:17 login systemd[1]: Slurm node daemon was skipped
   because of an unmet condition check (ConditionHost=c*).
 ```
 
-## A bit more security for the SMS
+### Making the changes permanent
 
-(going to talk about fail2ban here, maybe also firewalld)
+The `systemctl edit` command resulted in a file `/etc/systemd/system/slurmd.service.d/override.conf`.
+Let's:
+
+- make a place for it in the chroot on the SMS, and
+- copy the file over from the login node.
+
+```
+[user1@sms-0 ~]$ export CHROOT=/opt/ohpc/admin/images/rocky9.4
+[user1@sms-0 ~]$ sudo mkdir -p \
+  ${CHROOT}/etc/systemd/system/slurmd.service.d/
+[user1@sms-0 ~]$ sudo scp \
+  login:/etc/systemd/system/slurmd.service.d/override.conf \
+  ${CHROOT}/etc/systemd/system/slurmd.service.d/
+override.conf                    100%   23    36.7KB/s   00:00
+```
+
+### Making the changes permanent
+
+Finally, we'll:
+
+- rebuild the VNFS, and
+- reboot both the login node and a compute node to test the changes.
+
+```
+[user1@sms-0 ~]$ sudo wwvnfs --chroot=${CHROOT}
+Using 'rocky9.4' as the VNFS name
+...
+Total elapsed time                                          : 84.45 s
+[user1@sms-0 ~]$ sudo ssh login reboot
+[user1@sms-0 ~]$ sudo ssh c1 reboot
+```
+
+### Verifying the changes on the login node
+
+Verify that the login node doesn't start `slurmd`, but can still run `sinfo` without any error messages.
+```
+[user1@sms-0 ~]$ sudo ssh login systemctl status slurmd
+o slurmd.service - Slurm node daemon
+...
+Jul 06 18:26:23 login systemd[1]: Slurm node daemon was
+  skipped because of an unmet condition check
+  (ConditionHost=c*).
+[user1@sms-0 ~]$ sudo ssh login sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c1
+```
+
+### Verifying the changes on a compute node
+
+Verify that the compute node still starts `slurmd` (it can also run `sinfo`).
+```
+[user1@sms-0 ~]$ sudo ssh c1 systemctl status slurmd
+o slurmd.service - Slurm node daemon
+...
+Jul 06 19:03:22 c1 systemd[1]: Started Slurm node daemon.
+Jul 06 19:03:22 c1 slurmd[1082]: slurmd: CPUs=2 Boards=1 
+  Sockets=2 Cores=1 Threads=1 Memory=5912 TmpDisk=2956
+  Uptime=28 CPUSpecList=(null) FeaturesAvail=(null)
+  FeaturesActive=(null)
+[user1@sms-0 ~]$ sudo ssh c1 sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   down c1
+```
+(Yes, `c1` is marked `down`---we'll fix that shortly.)
+
+### Problem: the login node doesn't let users log in
+
+What if we ssh to the login node as someone other than root?
+
+```
+[user1@sms-0 ~]$ ssh login
+Access denied: user user1 (uid=1001) has no active jobs on this
+  node.
+Connection closed by 172.16.0.2 port 22
+```
+
+which makes this currently the opposite of a login node for normal users.
+Let's fix that.
+
+### Making the login node function as a login node
+
+- The `Access denied` is caused by the `pam_slurm.so` entry at the end of `/etc/pam.d/sshd`, which is invaluable on a normal compute node, but not on a login node.
+- On the SMS, you can also do a `diff -u /etc/pam.d/sshd ${CHROOT}/etc/pam.d/sshd`
+- You'll see that the `pam_slurm.so` line is the only difference between the two files.
+
+### Testing a PAM change to the login node
+
+- Temporarily comment out the last line of the login node's `/etc/pam.d/ssh` and see if you can ssh into the login node as a normal user (i.e., `ssh user1@login`).
+- Your user should be able to log in now.
+- In case the PAM configuration won't let root log in, **don't panic**! Instructors can reboot your login node from its console to put it back to its original state.
+
+### Making the change permanent
+
+- We want to ensure that the login node gets the same `/etc/pam.d/sshd` that the SMS uses.
+- We'll follow the same method we used to give the login node a custom `slurm.conf`:
+
+```
+[user1@sms-0 ~]$ sudo wwsh -y file import /etc/pam.d/sshd \
+  --name=sshd.login
+[user1@sms-0 ~]$ wwsh file list
+...
+sshd.login :  rw-r--r-- 1   root root      727 /etc/pam.d/sshd
+```
+
+### Making the change permanent
+
+```
+[user1@sms-0 ~]$ sudo wwsh -y provision set login \
+  --fileadd=sshd.login
+[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
+...
+  VALIDATE         = FALSE
+- FILES            = dynamic_hosts,group,munge.key,network,
+  passwd,shadow
++ FILES            = dynamic_hosts,group,munge.key,network,
+  passwd,shadow,slurm.conf.login,sshd.login
+...
+```
+(refer to section 3.9.3 of the install guide for previous examples of `--fileadd`).
+
+### Testing the change
+
+Reboot the login node and let's see if we can log in as a regular user.
+
+```
+[user1@sms-0 ~]$ sudo ssh login reboot
+[user1@sms-0 ~]$ ssh login
+[user1@login ~]$
+```
+
+## More seamless reboots of compute nodes
+
+### Why was `c1` marked as `down`?
+
+You can return `c1` to an idle state by running `sudo scontrol update node=c1 state=resume` on the SMS:
+```
+[user1@sms-0 ~]$ sudo scontrol update node=c1 state=resume
+[user1@sms-0 ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c1
+```
+
+We should configure things so that we don't have to manually resume nodes every time we reboot them.
+
+### More seamless reboots of compute nodes
+
+- Slurm doesn't like it when a node gets rebooted without its knowledge.
+- There's an `scontrol reboot` option that's handy to have nodes reboot when system updates occur, but it requires a valid setting for `RebootProgram` in `/etc/slurm/slurm.conf`.
+- By default, Slurm and OpenHPC don't ship with a default `RebootProgram`, so let's make one.
+
+### Adding a valid `RebootProgram`
+
+```
+[user1@sms-0 ~]$ grep -i reboot /etc/slurm/slurm.conf
+#RebootProgram=
+[user1@sms-0 ~]$ echo 'RebootProgram="/sbin/shutdown -r now"' \
+  | sudo tee -a /etc/slurm/slurm.conf
+[user1@sms-0 ~]$ grep -i reboot /etc/slurm/slurm.conf
+#RebootProgram=
+RebootProgram="/sbin/shutdown -r now"
+```
+
+### Informing all nodes of the changes and testing it out
+
+```
+[user1@sms-0 ~]$ sudo scontrol reconfigure
+[user1@sms-0 ~]$ sudo scontrol reboot ASAP nextstate=RESUME c1
+```
+
+- `scontrol reboot` will wait for all jobs on a group of nodes to finish before rebooting the nodes.
+- `scontrol reboot ASAP` will immediately put the nodes in a `DRAIN` state, routing all pending jobs to other nodes until the rebooted nodes are returned to service.
+- `scontrol reboot ASAP nextstate=RESUME` will set the nodes to accept jobs after the reboot. `nextstate=DOWN` will lave the nodes in a `DOWN` state if you need to do more work on them before returning them to service.
+
+### Did it work?
+
+TODO: verify what a successful "return to idle" looks like here, including an uptime of seconds to minutes rather than days.
+
+```
+[user1@sms-0 ~]$ sudo ssh c1 uptime
+ 08:44:31 up 66 days, 17:24,  2 users,  load average: 0.00, 0.04, 0.06
+[user1@sms-0 ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c1
+```
+
+
+## A bit more security for the SMS and login nodes
+
+**TODO: narrative about checking `/var/log/secure` on the SMS, seeing lots of brute-force SSH attempts for both it and login**
+
+**TODO: Verify if this will work on the SMS with a simple `sudo yum install fail2ban ; sudo systemctl enable fail2ban firewalld`, but we'll also have to ensure that we don't disrupt NFS or other services to the internal network**
 
 ::: notes
 x
@@ -527,7 +717,7 @@ x
 x
 :::
 
-# Managing system complexity)
+# Managing system complexity
 
 ## Configuration settings for different node types
 
