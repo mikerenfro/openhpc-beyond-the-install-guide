@@ -37,12 +37,11 @@ You should only have one OpenRC file in this folder.
 
 ## Container Setup (alternative to using Vagrant VM)
 
-Build the container with the following (or similar based on your environment)
+Build the container and start it with the following commands (or similar based on your environment)
 ```bash
-docker build -t beyond-tools --file Containerfile .
-docker run -it --rm beyond-tools
+docker build -t btig-tools --file Containerfile .
+docker run -it --rm btig-tools
 ```
-To build a Rocky 9 container to run all the tools
 
 
 ## Vagrant VM

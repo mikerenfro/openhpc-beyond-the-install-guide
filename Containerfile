@@ -37,8 +37,9 @@ RUN cp /vagrant/ipxe/disk.img /vagrant/openstack-tofu/ && \
 COPY ansible/ /vagrant/ansible/
 
 ## Setup profile
-RUN mkdir -p ~/.bashrc.d/ && \
+RUN cp /etc/skel/.bashrc ~/ && \
+    mkdir -p ~/.bashrc.d/ && \
     cp /vagrant/openstack-tofu/app-cred-*-openrc.sh ~/.bashrc.d/ && \
     echo "unset SSH_AUTH_SOCK" > ~/.bashrc.d/unset_ssh_auth_sock.sh && \
     ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 && \
-    echo "variable \"ssh_public_key\" { type = string\n default = \"$(cat ~/.ssh/id_ed25519.pub)\"\n }" > /vagrant/openstack-tofu/ssh_key.tf
+    echo -e "variable \"ssh_public_key\" {\n type = string\n default = \"$(cat ~/.ssh/id_ed25519.pub)\"\n}" > /vagrant/openstack-tofu/ssh_key.tf
