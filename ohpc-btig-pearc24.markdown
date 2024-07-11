@@ -769,12 +769,14 @@ Install the fail2ban packages on the login node with
 ```
 (this will also install `firewalld`).
 
-Add the following to the chroot's jail.local file with `sudo nano ${CHROOT}/etc/fail2ban/jail.d/sshd.local`:
+Add the following to the chroot's `sshd.local` file with `sudo nano ${CHROOT}/etc/fail2ban/jail.d/sshd.local`:
 
 ```
 [sshd]
 enabled = true
 ```
+
+Add `drivers += kernel/net/` to /etc/warewulf/bootstrap.conf and rerun wwbootstrap.
 
 ::: notes
 x
@@ -784,7 +786,7 @@ x
 
 Befoer we go further, check if there's anything in `/var/log/secure` on the login node:
 ```
-[user1@sms ~]$ sudo ssh ls -l /var/log/secure
+[user1@sms ~]$ sudo ssh login ls -l /var/log/secure
 -rw------- 1 root root 0 Jul  7 03:14 /var/log/secure
 ```
 Nope. Let's fix that, too.
@@ -818,9 +820,22 @@ x
 
 ```
 [user1@sms ~]$ sudo ssh login systemctl status firewalld
+[root@login ~]# systemctl status firewalld
+x firewalld.service - firewalld - dynamic firewall daemon
+     Loaded: loaded (/usr/lib/systemd/system/firewalld.service;
+       enabled; preset>
+     Active: failed (Result: exit-code) since Thu 2024-07-11
+       16:49:47 EDT; 46mi>
 ...
-...
+Jul 11 16:49:47 login systemd[1]: firewalld.service: Main
+  process exited, code=exited, status=3/NOTIMPLEMENTED
+Jul 11 16:49:47 login systemd[1]: firewalld.service: Failed
+  with result 'exit-code'.
 ```
+
+::: notes
+x
+:::
 
 # Making better compute nodes
 
