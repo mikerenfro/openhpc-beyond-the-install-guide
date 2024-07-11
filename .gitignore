@@ -13,3 +13,5 @@
 /openstack-tofu/terraform.tfstate.backup
 /*-local.pdf
 /ipxe/ipxe
+/student-*.docx
+/student-*.pdf
