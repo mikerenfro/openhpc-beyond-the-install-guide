@@ -12,7 +12,7 @@ function remove_old_keys() {
 function populate_host_vars() {
   echo "Populating host_vars for clusters: ${CLUSTER_NUMBERS}"
   for n in $CLUSTER_NUMBERS; do
-      host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${n}
+      host_var_file=${REPO_FOLDER}/ansible/host_vars/hpc${n}-sms
       echo ${host_var_file}
       mkdir -p ${REPO_FOLDER}/ansible/host_vars
       echo > ${host_var_file}
@@ -36,6 +36,12 @@ function populate_host_vars() {
     done
     num_gpus=$(tofu output -json gpunode-macs | jq "keys[] as \$k | \$k | select(match(\"hpc${n}-\"))" | wc -l)
     echo "num_gpus: ${num_gpus}" >> ${host_var_file}
+    login_mac=$(tofu output -json login-macs | jq -r ".[\"${n}\"][0]")
+    echo "login_mac: \"${login_mac}\"" >> ${host_var_file}
+    sms_ipv4=$(tofu output -json sms-ipv4 | jq -r ".[${n}]")
+    echo "sms_ipv4: ${sms_ipv4}" >> ${host_var_file}
+    login_ipv4=$(tofu output -json login-ipv4 | jq -r ".[${n}]")
+    echo "login_ipv4: ${login_ipv4}" >> ${host_var_file}
   done
 
   if [ ! -f ${REPO_FOLDER}/ansible/user-passwords.txt ]; then
@@ -58,7 +64,7 @@ function populate_host_vars() {
   echo "populating user_creds into host_vars files"
   set +e
   while read p ; do
-      host_var_file=${REPO_FOLDER}/ansible/host_vars/sms-${i}
+      host_var_file=${REPO_FOLDER}/ansible/host_vars/hpc${i}-sms
       if [ -f ${host_var_file} ]; then
           pc=$(python -c "import crypt; print(crypt.crypt('$p', crypt.mksalt(crypt.METHOD_SHA512)))")
           # https://unix.stackexchange.com/a/158402

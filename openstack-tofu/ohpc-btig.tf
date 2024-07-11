@@ -1,6 +1,6 @@
 resource "openstack_networking_network_v2" "intnet" {
   count          = var.n_students+1
-  name           = "intnet-${count.index}"
+  name           = "hpc${count.index}-internal"
   admin_state_up = "true"
 }
 resource "openstack_networking_subnet_v2" "internal-subnet" {
@@ -84,7 +84,7 @@ resource "openstack_networking_port_v2" "port-internal-login" {
 }
 resource "openstack_compute_instance_v2" "sms" {
   count = var.n_students+1
-  name = "sms-${count.index}"
+  name = "hpc${count.index}-sms"
   flavor_name = "m3.small"
   image_name = "Featured-RockyLinux9"
   key_pair = "ohpc-btig-keypair"
@@ -96,6 +96,7 @@ resource "openstack_compute_instance_v2" "sms" {
   }
   user_data = <<-EOF
     #!/bin/bash
+    hostnamectl hostname sms
     passwd -d root
     rm -v /root/.ssh/authorized_keys
     yum -q -y update --exclude='kernel*'
@@ -115,7 +116,7 @@ resource "openstack_compute_volume_attach_v2" "opt-ohpc-attach" {
 
 resource "openstack_compute_instance_v2" "login" {
   count = var.n_students+1
-  name = "login-${count.index}"
+  name = "hpc${count.index}-login"
   flavor_name = "m3.small"
   image_name = "efi-ipxe"
   # For now, flip the usual order of network connections so that login can provision from eth0

@@ -35,7 +35,7 @@ resource "openstack_networking_secgroup_rule_v2" "outside-icmp" {
 ## https://docs.jetstream-cloud.org/ui/cli/network/ and
 ## https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs/resources/networking_network_v2
 resource "openstack_networking_network_v2" "extnet" {
-  name           = "extnet"
+  name           = "external"
   admin_state_up = "true"
 }
 resource "openstack_networking_subnet_v2" "external-subnet" {
