@@ -57,7 +57,7 @@ You should only have one OpenRC file in this folder.
 Build the container and start it with the following commands (or similar based on your environment)
 ```bash
 docker build -t btig-tools --file Containerfile .
-docker run -it --rm btig-tools
+docker run -it btig-tools
 ```
 
 

@@ -66,7 +66,7 @@ function populate_host_vars() {
   while read p ; do
       host_var_file=${REPO_FOLDER}/ansible/host_vars/hpc${i}-sms
       if [ -f ${host_var_file} ]; then
-          pc=$(python -c "import crypt; print(crypt.crypt('$p', crypt.mksalt(crypt.METHOD_SHA512)))")
+          pc=$(python3 -c "import crypt; print(crypt.crypt('$p', crypt.mksalt(crypt.METHOD_SHA512)))")
           # https://unix.stackexchange.com/a/158402
           echo "user_creds:" >> ${host_var_file}
           for n in $(seq 1 ${USERS_PER_HOST}); do
