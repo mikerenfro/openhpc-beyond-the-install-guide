@@ -125,7 +125,7 @@ x
 x
 :::
 
-### Creating a new login node
+### Create a new login node
 
 Working from section 3.9.3 of the install guide:
 
@@ -259,7 +259,7 @@ SlurmctldHost=sms-0
 x
 :::
 
-### Interactive testing
+### Interactive test
 
 ::: {.columns align=top}
 
@@ -267,8 +267,7 @@ x
 
 1. On the login node as `root`, temporarily stop the `slurmd` service with `systemctl stop slurmd`
 2. On the login node as `root`, edit `/etc/slurm/slurm.conf` with `nano /etc/slurm/slurm.conf`
-3. Add the two lines to the right.
-4. Save and exit `nano` by pressing `Ctrl-X` and then Enter.
+3. Add the two lines to the right, save and exit `nano` by pressing `Ctrl-X` and then Enter.
 
 :::
 
@@ -295,7 +294,7 @@ normal*      up 1-00:00:00      1   idle c1
 x
 :::
 
-### Making permanent changes from the SMS
+### Make permanent changes from the SMS
 
 Let's reproduce the changes we made interactively on the login node in the Warewulf settings on the SMS.
 
@@ -309,7 +308,7 @@ We also need to make sure that file is part of the login node's provisioning set
 x
 :::
 
-### Making permanent changes from the SMS
+### Make permanent changes from the SMS
 
 On the SMS:
 ```
@@ -381,7 +380,7 @@ Let's simplify and filter the `wwsh provision` output to make it easier to compa
 x
 :::
 
-### Filtering `wwsh provision` output
+### Filter the `wwsh provision` output
 
 ::: incremental
 
@@ -426,7 +425,7 @@ Much more useful.
 x
 :::
 
-### Making a function for this
+### Make a function for this
 
 We may be typing that command pipeline a lot, so let's make a shell function to cut down on typing:
 ```
@@ -442,7 +441,7 @@ We may be typing that command pipeline a lot, so let's make a shell function to 
 x
 :::
 
-### `diff`-ing the outputs
+### `diff` the outputs
 
 We could redirect a `proprint c1` and a `proprint login` to files and `diff` the resulting files, or we can use the shell's `<()` operator to treat command output as a file:
 
@@ -457,7 +456,7 @@ Either of those shows there are zero provisioning differences between a compute 
 x
 :::
 
-### Adding the custom `slurm.conf` to the login node
+### Add the custom `slurm.conf` to the login node
 
 Add a file to login's `FILES` property with:
 ```
@@ -470,9 +469,8 @@ Add a file to login's `FILES` property with:
 x
 :::
 
-### Checking for provisioning differences
+### Check for provisioning differences
 
-Rerun the previous `diff` command to easily see what's changed:
 ```
 [user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
 --- /dev/fd/63  2024-07-06 11:11:07.682959677 -0400
@@ -494,7 +492,7 @@ Rerun the previous `diff` command to easily see what's changed:
 x
 :::
 
-### Ensuring `slurmd` doesn't run on the login node
+### Ensure `slurmd` doesn't run on the login node
 
 To disable the `slurmd` service on just the login node, we can take advantage of conditions in the `systemd` service file.
 Back on the login node as `root`:
@@ -516,7 +514,7 @@ This will only run the service on nodes whose hostnames start with `c` or `g`.
 x
 :::
 
-### Ensuring `slurmd` doesn't run on the login node
+### Ensure `slurmd` doesn't run on the login node
 
 Once that file is saved, try to start the `slurmd` service with `systemctl start slurmd` and check its status with `systemctl status slurmd`:
 
@@ -535,7 +533,7 @@ Jul 06 18:12:17 login systemd[1]: Slurm node daemon was skipped
 x
 :::
 
-### Making the changes permanent
+### Make the changes permanent
 
 The `systemctl edit` command resulted in a file `/etc/systemd/system/slurmd.service.d/override.conf`.
 Let's:
@@ -557,7 +555,7 @@ override.conf                    100%   23    36.7KB/s   00:00
 x
 :::
 
-### Making the changes permanent
+### Make the changes permanent
 
 Finally, we'll:
 
@@ -577,7 +575,7 @@ Total elapsed time                                          : 84.45 s
 x
 :::
 
-### Verifying the changes on the login node
+### Verify the changes on the login node
 
 Verify that the login node doesn't start `slurmd`, but can still run `sinfo` without any error messages.
 ```
@@ -596,7 +594,7 @@ normal*      up 1-00:00:00      1   idle c1
 x
 :::
 
-### Verifying the changes on a compute node
+### Verify the changes on a compute node
 
 Verify that the compute node still starts `slurmd` (it can also run `sinfo`).
 ```
@@ -636,7 +634,7 @@ Let's fix that.
 x
 :::
 
-### Making the login node function as a login node
+### Make the login node function as a login node
 
 - The `Access denied` is caused by the `pam_slurm.so` entry at the end of `/etc/pam.d/sshd`, which is invaluable on a normal compute node, but not on a login node.
 - On the SMS, you can also do a `diff -u /etc/pam.d/sshd ${CHROOT}/etc/pam.d/sshd`
@@ -646,7 +644,7 @@ x
 x
 :::
 
-### Testing a PAM change to the login node
+### Test a PAM change to the login node
 
 - Temporarily comment out the last line of the login node's `/etc/pam.d/ssh` and see if you can ssh into the login node as a normal user (i.e., `ssh user1@login`).
 - Your user should be able to log in now.
@@ -656,7 +654,7 @@ x
 x
 :::
 
-### Making the change permanent
+### Make the change permanent
 
 - We want to ensure that the login node gets the same `/etc/pam.d/sshd` that the SMS uses.
 - We'll follow the same method we used to give the login node a custom `slurm.conf`:
@@ -673,7 +671,7 @@ sshd.login :  rw-r--r-- 1   root root      727 /etc/pam.d/sshd
 x
 :::
 
-### Making the change permanent
+### Make the change permanent
 
 ```
 [user1@sms-0 ~]$ sudo wwsh -y provision set login \
@@ -693,7 +691,7 @@ x
 x
 :::
 
-### Testing the change
+### Test the change
 
 Reboot the login node and let's see if we can log in as a regular user.
 
@@ -707,7 +705,7 @@ Reboot the login node and let's see if we can log in as a regular user.
 x
 :::
 
-## A bit more security for the SMS and login nodes
+## A bit more security for the login node
 
 **TODO: narrative about checking `/var/log/secure` on the SMS, seeing lots of brute-force SSH attempts for both it and login**
 
