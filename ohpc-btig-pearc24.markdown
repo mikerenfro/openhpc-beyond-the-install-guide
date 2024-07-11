@@ -707,9 +707,110 @@ x
 
 ## A bit more security for the login node
 
-**TODO: narrative about checking `/var/log/secure` on the SMS, seeing lots of brute-force SSH attempts for both it and login**
+- narrative about brute-force SSH activity
+- verify what ports are listening on login (should really just be SSH)
+- enabling firewalld
+- enabling fail2ban
+- realizing that the default `wwbootstrap` kernel is lacking, and rebuilding it
 
-**TODO: Verify if this will work on the SMS with a simple `sudo yum install fail2ban ; sudo systemctl enable fail2ban firewalld`, but we'll also have to ensure that we don't disrupt NFS or other services to the internal network**
+::: notes
+x
+:::
+
+### A bit more security for the login node
+
+Not too long after your SMS and/or login nodes are booted, you'll see messages in the SMS `/var/log/secure` like:
+```
+Jul 11 11:24:06 sms sshd[162636]: Invalid user evilmike from 
+  174.212.97.32 port 1028
+...
+Jul 11 11:24:08 sms sshd[162636]: Failed password for invalid
+  user evilmike from 174.212.97.32 port 1028 ssh2
+...
+```
+because people who want to break into computers for various reasons have Internet connections.
+
+::: notes
+x
+:::
+
+### A bit more security for the login node
+
+There's a lot of things that can be done to secure things, including:
+
+1. Placing the SMS and login node external interfaces on protected network segment.
+2. Allowing only administrative users to SSH into the SMS.
+3. Replacing password-based authentication with key-based authentication.
+
+Though #3 will eliminate brute-force password guessing attacks, it's usually not practical for a login node. So let's mitigate that differently with `fail2ban`.
+
+::: notes
+x
+:::
+
+### How `fail2ban` works
+
+1. Monitor `/var/log/secure` and other logs for indicators of brute-force attacks (invalid users, failed passwords, etc.)
+2. If indicators from a specific IP address happen often enough over a period of time, block all access from that address for a period of time.
+3. Once that period has expired, remove the IP address from the block list.
+
+This reduces the effectiveness of brute-force password guessing by orders of magnitude (~10 guesses per hour versus ~100 or ~1000 guesses per hour).
+
+::: notes
+x
+:::
+
+### Test installing `fail2ban` on the login node
+
+Install the fail2ban packages on the login node with
+```
+[user1@sms-0 ~]$ sudo yum install --installroot=${CHROOT} \
+  fail2ban
+[user1@sms-0 ~]$ sudo chroot ${CHROOT} systemctl enable \
+  fail2ban firewalld
+```
+(this will also install `firewalld`).
+
+Add the following to the chroot's jail.local file with `sudo nano ${CHROOT}/etc/fail2ban/jail.d/sshd.local`:
+
+```
+[sshd]
+enabled = true
+```
+
+::: notes
+x
+:::
+
+### Test installing `fail2ban` on the login node
+
+Befoer we go further, check if there's anything in `/var/log/secure` on the login node:
+```
+[user1@sms-0 ~]$ sudo ssh ls -l /var/log/secure
+-rw------- 1 root root 0 Jul  7 03:14 /var/log/secure
+```
+Nope. Let's fix that, too.
+
+- Looking in `/etc/rsyslog.conf`, we see a bunch of things commented out, including the line `#authpriv.* /var/log/secure`.
+- Rather than drop in an entirely new rsyslog.conf file that we'd have to maintain, rsyslog will automatically include any `*.conf` files in `/etc/rsyslog.d`.
+- Let's make one of those for the chroot.
+
+::: notes
+x
+:::
+
+### Make an rsyslog.d file, rebuild the VNFS, reboot the login node
+
+```
+[user1@sms-0 ~]$ echo "authpriv.* /var/log/secure" | \
+  sudo tee ${CHROOT}/etc/rsyslog.d/authpriv-local.conf
+authpriv.* /var/log/secure
+[user1@sms-0 ~]$ cat \
+  ${CHROOT}/etc/rsyslog.d/authpriv-local.conf
+authpriv.* /var/log/secure
+[user1@sms-0 ~]$ sudo wwvnfs --chroot=${CHROOT}
+[user1@sms-0 ~]$ sudo ssh login reboot
+```
 
 ::: notes
 x
