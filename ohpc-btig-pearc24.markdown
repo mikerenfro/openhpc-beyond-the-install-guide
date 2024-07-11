@@ -130,9 +130,9 @@ x
 Working from section 3.9.3 of the install guide:
 
 ```
-[user1@sms-0 ~]$ sudo wwsh -y node new login --netdev eth0 \
+[user1@sms ~]$ sudo wwsh -y node new login --netdev eth0 \
     --ipaddr=172.16.0.2 --hwaddr=__:__:__:__:__:__
-[user1@sms-0 ~]$ sudo wwsh -y provision set login \
+[user1@sms ~]$ sudo wwsh -y provision set login \
     --vnfs=rocky9.4 --bootstrap=`uname -r` \
     --files=dynamic_hosts,passwd,group,shadow,munge.key,network
 ```
@@ -180,7 +180,7 @@ x
 ### Did it work? So far, so good.
 
 ```
-[user1@sms-0 ~]$ sudo ssh login
+[user1@sms ~]$ sudo ssh login
 [root@login ~]# df -h
 Filesystem
 ...
@@ -250,10 +250,8 @@ Running `slurmd` like the other nodes means the login node can get all its infor
 
 ```
 ClusterName=cluster
-SlurmctldHost=sms-0
+SlurmctldHost=sms
 ```
-
-(where `sms-0` should be **your** SMS hostname from your handout) and stopping/disabling the `slurmd` service.
 
 ::: notes
 x
@@ -275,7 +273,7 @@ x
 #### `/etc/slurm/slurm.conf` on login node
 ```
 ClusterName=cluster
-SlurmctldHost=sms-0
+SlurmctldHost=sms
 ```
 
 :::
@@ -312,10 +310,10 @@ x
 
 On the SMS:
 ```
-[user1@sms-0 ~]$ sudo scp login:/etc/slurm/slurm.conf \
+[user1@sms ~]$ sudo scp login:/etc/slurm/slurm.conf \
   /etc/slurm/slurm.conf.login
 slurm.conf                        100%   40    57.7KB/s   00:00
-[user1@sms-0 ~]$ sudo wwsh -y file import \
+[user1@sms ~]$ sudo wwsh -y file import \
   /etc/slurm/slurm.conf.login --name=slurm.conf.login \
   --path=/etc/slurm/slurm.conf
 ```
@@ -330,7 +328,7 @@ x
 
 What are the provisioning settings for compute node `c1`?
 ```
-[user1@sms-0 ~]$ wwsh provision print c1
+[user1@sms ~]$ wwsh provision print c1
 #### c1 ######################################################
  c1: MASTER           = UNDEF
  c1: BOOTSTRAP        = 6.1.96-1.el9.elrepo.x86_64
@@ -351,7 +349,7 @@ x
 
 What are the provisioning settings for node `login`?
 ```
-[user1@sms-0 ~]$ wwsh provision print login
+[user1@sms ~]$ wwsh provision print login
 #### login ###################################################
  login: MASTER        = UNDEF
  login: BOOTSTRAP     = 6.1.96-1.el9.elrepo.x86_64
@@ -429,9 +427,9 @@ x
 
 We may be typing that command pipeline a lot, so let's make a shell function to cut down on typing:
 ```
-[user1@sms-0 ~]$ function proprint() { \
+[user1@sms ~]$ function proprint() { \
   wwsh provision print $@ | grep = | cut -d: -f2- ; }
-[user1@sms-0 ~]$ proprint c1
+[user1@sms ~]$ proprint c1
  MASTER           = UNDEF
  BOOTSTRAP        = 6.1.96-1.el9.elrepo.x86_64
 ...
@@ -446,8 +444,8 @@ x
 We could redirect a `proprint c1` and a `proprint login` to files and `diff` the resulting files, or we can use the shell's `<()` operator to treat command output as a file:
 
 ```
-[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
-[user1@sms-0 ~]$
+[user1@sms ~]$ diff -u <(proprint c1) <(proprint login)
+[user1@sms ~]$
 ```
 
 Either of those shows there are zero provisioning differences between a compute node and the login node.
@@ -460,7 +458,7 @@ x
 
 Add a file to login's `FILES` property with:
 ```
-[user1@sms-0 ~]$ sudo wwsh -y provision set login \
+[user1@sms ~]$ sudo wwsh -y provision set login \
   --fileadd=slurm.conf.login
 ```
 (refer to section 3.9.3 of the install guide for previous examples of `--fileadd`).
@@ -472,7 +470,7 @@ x
 ### Check for provisioning differences
 
 ```
-[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
+[user1@sms ~]$ diff -u <(proprint c1) <(proprint login)
 --- /dev/fd/63  2024-07-06 11:11:07.682959677 -0400
 +++ /dev/fd/62  2024-07-06 11:11:07.683959681 -0400
 @@ -2,7 +2,7 @@
@@ -498,7 +496,7 @@ To disable the `slurmd` service on just the login node, we can take advantage of
 Back on the login node as `root`:
 
 ```
-[user1@sms-0 ~]$ sudo ssh login
+[user1@sms ~]$ sudo ssh login
 [root@login ~]# systemctl edit slurmd
 ```
 
@@ -542,10 +540,10 @@ Let's:
 - copy the file over from the login node.
 
 ```
-[user1@sms-0 ~]$ export CHROOT=/opt/ohpc/admin/images/rocky9.4
-[user1@sms-0 ~]$ sudo mkdir -p \
+[user1@sms ~]$ export CHROOT=/opt/ohpc/admin/images/rocky9.4
+[user1@sms ~]$ sudo mkdir -p \
   ${CHROOT}/etc/systemd/system/slurmd.service.d/
-[user1@sms-0 ~]$ sudo scp \
+[user1@sms ~]$ sudo scp \
   login:/etc/systemd/system/slurmd.service.d/override.conf \
   ${CHROOT}/etc/systemd/system/slurmd.service.d/
 override.conf                    100%   23    36.7KB/s   00:00
@@ -563,12 +561,12 @@ Finally, we'll:
 - reboot both the login node and a compute node to test the changes.
 
 ```
-[user1@sms-0 ~]$ sudo wwvnfs --chroot=${CHROOT}
+[user1@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
 Using 'rocky9.4' as the VNFS name
 ...
 Total elapsed time                                          : 84.45 s
-[user1@sms-0 ~]$ sudo ssh login reboot
-[user1@sms-0 ~]$ sudo ssh c1 reboot
+[user1@sms ~]$ sudo ssh login reboot
+[user1@sms ~]$ sudo ssh c1 reboot
 ```
 
 ::: notes
@@ -579,13 +577,13 @@ x
 
 Verify that the login node doesn't start `slurmd`, but can still run `sinfo` without any error messages.
 ```
-[user1@sms-0 ~]$ sudo ssh login systemctl status slurmd
+[user1@sms ~]$ sudo ssh login systemctl status slurmd
 o slurmd.service - Slurm node daemon
 ...
 Jul 06 18:26:23 login systemd[1]: Slurm node daemon was
   skipped because of an unmet condition check
   (ConditionHost=c*).
-[user1@sms-0 ~]$ sudo ssh login sinfo
+[user1@sms ~]$ sudo ssh login sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
@@ -598,7 +596,7 @@ x
 
 Verify that the compute node still starts `slurmd` (it can also run `sinfo`).
 ```
-[user1@sms-0 ~]$ sudo ssh c1 systemctl status slurmd
+[user1@sms ~]$ sudo ssh c1 systemctl status slurmd
 o slurmd.service - Slurm node daemon
 ...
 Jul 06 19:03:22 c1 systemd[1]: Started Slurm node daemon.
@@ -606,7 +604,7 @@ Jul 06 19:03:22 c1 slurmd[1082]: slurmd: CPUs=2 Boards=1
   Sockets=2 Cores=1 Threads=1 Memory=5912 TmpDisk=2956
   Uptime=28 CPUSpecList=(null) FeaturesAvail=(null)
   FeaturesActive=(null)
-[user1@sms-0 ~]$ sudo ssh c1 sinfo
+[user1@sms ~]$ sudo ssh c1 sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   down c1
 ```
@@ -621,7 +619,7 @@ x
 What if we ssh to the login node as someone other than root?
 
 ```
-[user1@sms-0 ~]$ ssh login
+[user1@sms ~]$ ssh login
 Access denied: user user1 (uid=1001) has no active jobs on this
   node.
 Connection closed by 172.16.0.2 port 22
@@ -660,9 +658,9 @@ x
 - We'll follow the same method we used to give the login node a custom `slurm.conf`:
 
 ```
-[user1@sms-0 ~]$ sudo wwsh -y file import /etc/pam.d/sshd \
+[user1@sms ~]$ sudo wwsh -y file import /etc/pam.d/sshd \
   --name=sshd.login
-[user1@sms-0 ~]$ wwsh file list
+[user1@sms ~]$ wwsh file list
 ...
 sshd.login :  rw-r--r-- 1   root root      727 /etc/pam.d/sshd
 ```
@@ -674,9 +672,9 @@ x
 ### Make the change permanent
 
 ```
-[user1@sms-0 ~]$ sudo wwsh -y provision set login \
+[user1@sms ~]$ sudo wwsh -y provision set login \
   --fileadd=sshd.login
-[user1@sms-0 ~]$ diff -u <(proprint c1) <(proprint login)
+[user1@sms ~]$ diff -u <(proprint c1) <(proprint login)
 ...
   VALIDATE         = FALSE
 - FILES            = dynamic_hosts,group,munge.key,network,
@@ -696,8 +694,8 @@ x
 Reboot the login node and let's see if we can log in as a regular user.
 
 ```
-[user1@sms-0 ~]$ sudo ssh login reboot
-[user1@sms-0 ~]$ ssh login
+[user1@sms ~]$ sudo ssh login reboot
+[user1@sms ~]$ ssh login
 [user1@login ~]$
 ```
 
@@ -764,9 +762,9 @@ x
 
 Install the fail2ban packages on the login node with
 ```
-[user1@sms-0 ~]$ sudo yum install --installroot=${CHROOT} \
+[user1@sms ~]$ sudo yum install --installroot=${CHROOT} \
   fail2ban
-[user1@sms-0 ~]$ sudo chroot ${CHROOT} systemctl enable \
+[user1@sms ~]$ sudo chroot ${CHROOT} systemctl enable \
   fail2ban firewalld
 ```
 (this will also install `firewalld`).
@@ -786,7 +784,7 @@ x
 
 Befoer we go further, check if there's anything in `/var/log/secure` on the login node:
 ```
-[user1@sms-0 ~]$ sudo ssh ls -l /var/log/secure
+[user1@sms ~]$ sudo ssh ls -l /var/log/secure
 -rw------- 1 root root 0 Jul  7 03:14 /var/log/secure
 ```
 Nope. Let's fix that, too.
@@ -802,19 +800,27 @@ x
 ### Make an rsyslog.d file, rebuild the VNFS, reboot the login node
 
 ```
-[user1@sms-0 ~]$ echo "authpriv.* /var/log/secure" | \
+[user1@sms ~]$ echo "authpriv.* /var/log/secure" | \
   sudo tee ${CHROOT}/etc/rsyslog.d/authpriv-local.conf
 authpriv.* /var/log/secure
-[user1@sms-0 ~]$ cat \
+[user1@sms ~]$ cat \
   ${CHROOT}/etc/rsyslog.d/authpriv-local.conf
 authpriv.* /var/log/secure
-[user1@sms-0 ~]$ sudo wwvnfs --chroot=${CHROOT}
-[user1@sms-0 ~]$ sudo ssh login reboot
+[user1@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+[user1@sms ~]$ sudo ssh login reboot
 ```
 
 ::: notes
 x
 :::
+
+### Post-reboot, how's `fail2ban` and `firewalld` on the login node?
+
+```
+[user1@sms ~]$ sudo ssh login systemctl status firewalld
+...
+...
+```
 
 # Making better compute nodes
 
@@ -824,8 +830,8 @@ x
 
 You can return `c1` to an idle state by running `sudo scontrol update node=c1 state=resume` on the SMS:
 ```
-[user1@sms-0 ~]$ sudo scontrol update node=c1 state=resume
-[user1@sms-0 ~]$ sinfo
+[user1@sms ~]$ sudo scontrol update node=c1 state=resume
+[user1@sms ~]$ sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
@@ -849,11 +855,11 @@ x
 ### Adding a valid `RebootProgram`
 
 ```
-[user1@sms-0 ~]$ grep -i reboot /etc/slurm/slurm.conf
+[user1@sms ~]$ grep -i reboot /etc/slurm/slurm.conf
 #RebootProgram=
-[user1@sms-0 ~]$ echo 'RebootProgram="/sbin/shutdown -r now"' \
+[user1@sms ~]$ echo 'RebootProgram="/sbin/shutdown -r now"' \
   | sudo tee -a /etc/slurm/slurm.conf
-[user1@sms-0 ~]$ grep -i reboot /etc/slurm/slurm.conf
+[user1@sms ~]$ grep -i reboot /etc/slurm/slurm.conf
 #RebootProgram=
 RebootProgram="/sbin/shutdown -r now"
 ```
@@ -865,8 +871,8 @@ x
 ### Informing all nodes of the changes and testing it out
 
 ```
-[user1@sms-0 ~]$ sudo scontrol reconfigure
-[user1@sms-0 ~]$ sudo scontrol reboot ASAP nextstate=RESUME c1
+[user1@sms ~]$ sudo scontrol reconfigure
+[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME c1
 ```
 
 - `scontrol reboot` will wait for all jobs on a group of nodes to finish before rebooting the nodes.
@@ -882,9 +888,9 @@ x
 TODO: verify what a successful "return to idle" looks like here, including an uptime of seconds to minutes rather than days.
 
 ```
-[user1@sms-0 ~]$ sudo ssh c1 uptime
+[user1@sms ~]$ sudo ssh c1 uptime
  08:44:31 up 66 days, 17:24,  2 users,  load average: 0.00, 0.04, 0.06
-[user1@sms-0 ~]$ sinfo
+[user1@sms ~]$ sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      1   idle c1
 ```
