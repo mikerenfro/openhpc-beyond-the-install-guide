@@ -345,6 +345,14 @@ Reboot the login node and let's see if we can log in as a regular user.
 
 **Verify if this will work on the SMS with a simple `sudo yum install fail2ban ; sudo systemctl enable fail2ban firewalld`**
 
+`firewalld` on the SMS will be mildly complicated for this time constraint. `eth0` and `eth1` are in the default public zone, so we'd have to:
+
+- put them in separate zones
+- add rules/policy to the external zone
+- not break things
+
+May be simpler to say that in production, the external HPC interfaces should be in a protected VLAN, the SMS might only take key-based logins, and continue on with the login node since that may be more exposed to users and pretty much has to allow password-based logins.
+
 **Also work in notes on running both fail2ban and firewalld on the login node**
 
 Look what will show up in the SMS `/var/log/secure` within just a few minutes of having `ssh` enabled on the login node:
