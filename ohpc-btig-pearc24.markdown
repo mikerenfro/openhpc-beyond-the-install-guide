@@ -1173,7 +1173,7 @@ Installing:
  kernel  x86_64 5.14.0-427.24.1.el9_4 ...
 ...
 Complete!
-[rocky@sms ~]$ sudo wwbootstrap --chroot=${CHROOT} \
+[user1@sms ~]$ sudo wwbootstrap --chroot=${CHROOT} \
   5.14.0-427.24.1.el9_4.x86_64
 Number of drivers included in bootstrap: 880
 ...
@@ -1221,14 +1221,14 @@ x
 ### Verify everything came back up
 
 ```
-[rocky@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2],login' uname -r \
+[user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2],login' uname -r \
   | sort
 c1: 5.14.0-427.24.1.el9_4.x86_64
 c2: 5.14.0-427.24.1.el9_4.x86_64
 g1: 5.14.0-427.24.1.el9_4.x86_64
 g2: 5.14.0-427.24.1.el9_4.x86_64
 login: 5.14.0-427.24.1.el9_4.x86_64
-[rocky@sms ~]$ sinfo
+[user1@sms ~]$ sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      2   idle c[1-2]
 ```
@@ -1244,6 +1244,40 @@ x
 ## Management of GPU drivers
 
 (installing GPU drivers -- mostly rsync'ing a least-common-denominator chroot into a GPU-named chroot, copying the NVIDIA installer into the chroot, mounting /proc and /sys, running the installer, umounting /proc and /sys, and building a second VNFS)
+
+### See what we have, download the driver
+
+```
+[user1@sms ~]$ sudo ssh g1 lspci | grep -i nvidia
+06:00.0 3D controller: NVIDIA Corporation GA100 [A100 SXM4
+  40GB] (rev a1)
+[user1@sms ~]$ export NV=550.90.07
+[user1@sms ~]$ export B=https://us.download.nvidia.com/tesla/
+[user1@sms ~]$ wget \
+  ${B}/${NV}/NVIDIA-Linux-x86_64-${NV}.run
+```
+
+### Prepare to install the driver
+
+```
+[user1@sms ~]$ chmod 755 NVIDIA-Linux-x86_64-${NV}.run
+[user1@sms ~]$ sudo mount -o rw,bind /proc ${CHROOT}/proc
+[user1@sms ~]$ sudo mount -o rw,bind /dev ${CHROOT}/dev
+[user1@sms ~]$ sudo cp NVIDIA-Linux-x86_64-${NV}.run \
+  $CHROOT/root
+```
+
+### Install the driver, clean up, update VNFS
+```
+[user1@sms ~]$ sudo chroot ${CHROOT} \
+  /root/NVIDIA-Linux-x86_64-${NV}.run \
+  --kernel-name=5.14.0-427.24.1.el9_4.x86_64 \
+  --disable-nouveau --silent --run-nvidia-xconfig --no-drm
+[user1@sms ~]$ sudo rm \
+  ${CHROOT}/root/NVIDIA-Linux-x86_64-${NV}.run
+[user1@sms ~]$ sudo umount ${CHROOT}/proc ${CHROOT}/dev
+[user1@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+```
 
 ::: notes
 x
