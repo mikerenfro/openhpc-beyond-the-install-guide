@@ -720,10 +720,10 @@ x
 Not too long after your SMS and/or login nodes are booted, you'll see messages in the SMS `/var/log/secure` like:
 ```
 Jul 11 11:24:06 sms sshd[162636]: Invalid user evilmike from 
-  174.212.97.32 port 1028
+  68.66.205.120 port 1028
 ...
 Jul 11 11:24:08 sms sshd[162636]: Failed password for invalid
-  user evilmike from 174.212.97.32 port 1028 ssh2
+  user evilmike from 68.66.205.120 port 1028 ssh2
 ...
 ```
 because people who want to break into computers for various reasons have Internet connections.
@@ -776,7 +776,29 @@ Add the following to the chroot's `sshd.local` file with `sudo nano ${CHROOT}/et
 enabled = true
 ```
 
-Add `drivers += kernel/net/` to /etc/warewulf/bootstrap.conf and rerun wwbootstrap.
+::: notes
+x
+:::
+
+### Test installing `fail2ban` on the login node
+
+Don't forget to only run `fail2ban` on the login node, and not the compute nodes:
+- Nobody can SSH into your compute nodes from outside.
+- Thus, the only things a compute node could ban would be your SMS or your login node.
+- A malicious or unwitting user could easily ban your login node from a compute node by SSH'ing to it repeatedly, which would effectively be a denial of service.
+
+```
+[user1@sms ~]$ sudo mkdir -p \
+  ${CHROOT}/etc/systemd/system/fail2ban.service.d/
+[user1@sms ~]$ sudo nano \
+  ${CHROOT}/etc/systemd/system/fail2ban.service.d/override.conf
+```
+Add the lines
+```
+[Unit]
+ConditionHost=|login*
+```
+then save and exit with Ctrl-X.
 
 ::: notes
 x
@@ -832,6 +854,134 @@ Jul 11 16:49:47 login systemd[1]: firewalld.service: Main
 Jul 11 16:49:47 login systemd[1]: firewalld.service: Failed
   with result 'exit-code'.
 ```
+Not great.
+
+::: notes
+x
+:::
+
+### Diagnosing `3/NOTIMPLEMENTED`
+
+::: incremental
+
+- **So many** Google results amount to "reboot to get your new kernel", but we've just booted a new kernel.
+- Red Hat has an article telling you to verify that you haven't disabled module loading by checking `sysctl -a | grep modules_disabled`, but that's not disabled either.
+- The Red Hat article does tell you that packet filtering capabilities have to be enabled in the kernel, and that gets us closer.
+- It is possible to install and start firewalld on the SMS (you don't have to verify this right now), and that's using the same kernel as the login node.
+- Or **is it**?
+
+:::
+
+::: notes
+x
+:::
+
+### Diagnosing `3/NOTIMPLEMENTED`
+
+::: incremental
+
+- How did we get the kernel that the login node is using?
+- Via `wwbootstrap $(uname -r)` (section 3.9.1)
+- That section **also** had a command that most of us don't pay close attension to: `echo "drivers += updates/kernel/" >> /etc/warewulf/bootstrap.conf`
+- So though the login node is running the same kernel **version** as the SMS, it may **not** have all the drivers included.
+- Where are the drivers we care about? `lsmod` on the SMS shows a lot of `nf`-named modules for the Netfilter kernel framework.
+- `find /lib/modules/$(uname -r) -name '*nf*'` shows these modules are largely located in the `kernel/net` folder (specifically `kernel/net/ipv4/netfilter`, `kernel/net/ipv6/netfilter`, and `kernel/net/netfilter`).
+
+:::
+
+::: notes
+x
+:::
+
+### Diagnosing `3/NOTIMPLEMENTED`
+
+Is `kernel/net` in our `/etc/warewulf/bootstrap.conf` at all?
+```
+[user1@sms ~]$ grep kernel/net /etc/warewulf/bootstrap.conf
+[user1@sms ~]$
+```
+Nope, let's add it.
+```
+[user1@sms ~]$ grep kernel/net /etc/warewulf/bootstrap.conf
+[user1@sms ~]$ echo "drivers += kernel/net/" | \
+  sudo tee -a /etc/warewulf/bootstrap.conf
+drivers += kernel/net/
+[user1@sms ~]$ grep kernel/net /etc/warewulf/bootstrap.conf
+drivers += kernel/net/
+```
+
+::: notes
+x
+:::
+
+### Diagnosing `3/NOTIMPLEMENTED`
+
+Let's re-run the `wwbootstrap` command and reboot the login node:
+```
+[user1@sms ~]$ sudo wwbootstrap `uname -r`
+...
+Bootstrap image '6.1.97-1.el9.elrepo.x86_64' is ready
+Done.
+[user1@sms ~]$ sudo ssh login reboot
+```
+
+::: notes
+x
+:::
+
+### Did `3/NOTIMPLEMENTED` go away?
+
+```
+[user1@sms ~]$ sudo ssh login systemctl status firewalld
+o firewalld.service - firewalld - dynamic firewall daemon
+     Loaded: loaded (/usr/lib/systemd/system/firewalld.service;
+       enabled; preset: enabled)
+     Active: active (running) since Thu 2024-07-11 21:58:18
+       EDT; 43s ago
+...
+Jul 11 21:58:18 login systemd[1]: Starting firewalld - dynamic
+  firewall daemon...
+Jul 11 21:58:18 login systemd[1]: Started firewalld - dynamic 
+  firewall daemon.
+```
+It did.
+
+::: notes
+x
+:::
+
+### Does `fail2ban` actually work now?
+
+```
+[user1@sms ~]$ sudo ssh login grep 68.66.205.120 \
+  /var/log/fail2ban.log
+...
+2024-07-11 22:02:27,030 fail2ban.actions ... [sshd] Ban \
+  68.66.205.120
+```
+
+It does.
+
+::: notes
+x
+:::
+
+### What does it look like from `evilmike`'s side?
+
+```
+mike@server:~$ ssh evilmike@149.165.155.235
+evilmike@149.165.155.235's password:
+Permission denied, please try again.
+evilmike@149.165.155.235's password:
+Permission denied, please try again.
+evilmike@149.165.155.235's password:
+evilmike@149.165.155.235: Permission denied (publickey,
+  gssapi-keyex,gssapi-with-mic,password).
+mike@server:~$ ssh evilmike@149.165.155.235
+ssh: connect to host 149.165.155.235 port 22: Connection
+  refused
+```
+`evilmike` is thwarted, at least for now.
 
 ::: notes
 x
