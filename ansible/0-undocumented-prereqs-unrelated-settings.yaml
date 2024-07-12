@@ -28,6 +28,11 @@
       ansible.builtin.shell: |
         mv /etc/profile.d/z99-lmod-default-modules.sh{,.orig}
       when: lmod_default_modules.stat.exists
+    - name: Ensure CHROOT environment variable is set
+      ansible.builtin.lineinfile:
+        path: /etc/profile.d/z99-ohpc-chroot.sh
+        create: true
+        line: "export CHROOT=/opt/ohpc/admin/images/rocky9.4"
 
     # Undocumented dependencies for OpenHPC
     - name: Install undocumented package dependencies for default OpenHPC environment
@@ -42,6 +47,16 @@
         groups: wheel
         append: true
       loop: "{{ user_creds }}"
+    - name: Add ssh keys for helpers to rocky account
+      ansible.posix.authorized_key:
+        user: rocky
+        state: present
+        key: "{{ lookup('url', 'https://github.com/{{ item }}.keys', split_lines=False) }}"
+      loop:
+        - mikerenfro
+        - is0p0d
+        - scolson82
+        - MiddelkoopT
     - name: Create a new primary partition on second disk for /opt/ohpc
       community.general.parted:
         device: /dev/disk/by-path/pci-0000:03:00.0-scsi-0:0:0:1

@@ -89,6 +89,7 @@ We used the OpenHPC automatic installation script from Appendix A with a few var
 5. Added `nano` and `yum` to `CHROOT`.
 6. Removed a redundant `ReturnToService` line from `/etc/slurm/slurm.conf`.
 7. Stored all compute/GPU nodes' SSH host keys in `/etc/ssh/ssh_known_hosts`.
+8. Globally set an environment variable `CHROOT` to `/opt/ohpc/admin/images/rocky9.4`.
 
 ::: notes
 x
@@ -133,7 +134,7 @@ Working from section 3.9.3 of the install guide:
 [user1@sms ~]$ sudo wwsh -y node new login --netdev eth0 \
     --ipaddr=172.16.0.2 --hwaddr=__:__:__:__:__:__
 [user1@sms ~]$ sudo wwsh -y provision set login \
-    --vnfs=rocky9.4 --bootstrap=`uname -r` \
+    --vnfs=rocky9.4 --bootstrap=$(uname -r) \
     --files=dynamic_hosts,passwd,group,shadow,munge.key,network
 ```
 
@@ -540,7 +541,6 @@ Let's:
 - copy the file over from the login node.
 
 ```
-[user1@sms ~]$ export CHROOT=/opt/ohpc/admin/images/rocky9.4
 [user1@sms ~]$ sudo mkdir -p \
   ${CHROOT}/etc/systemd/system/slurmd.service.d/
 [user1@sms ~]$ sudo scp \
@@ -548,6 +548,8 @@ Let's:
   ${CHROOT}/etc/systemd/system/slurmd.service.d/
 override.conf                    100%   23    36.7KB/s   00:00
 ```
+
+(**Note:** we globally pre-set the `CHROOT` environment for any account that logs into the SMS so that you didn't have to.)
 
 ::: notes
 x
@@ -918,7 +920,7 @@ x
 
 Let's re-run the `wwbootstrap` command and reboot the login node:
 ```
-[user1@sms ~]$ sudo wwbootstrap `uname -r`
+[user1@sms ~]$ sudo wwbootstrap $(uname -r)
 ...
 Bootstrap image '6.1.97-1.el9.elrepo.x86_64' is ready
 Done.
