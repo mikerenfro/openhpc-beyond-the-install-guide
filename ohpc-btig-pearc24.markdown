@@ -240,7 +240,7 @@ Now an `sinfo` should work on the login node:
 ```
 [root@login ~]# sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 1-00:00:00      1   idle c1
+normal*      up 1-00:00:00      1   idle c[1-2]
 ```
 
 ::: notes
@@ -290,7 +290,7 @@ Verify that `sinfo` still works without `slurmd` and with the custom `/etc/slurm
 ```
 [root@login ~]# sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 1-00:00:00      1   idle c1
+normal*      up 1-00:00:00      1   idle c[1-2]
 ```
 
 ::: notes
@@ -591,7 +591,7 @@ Jul 06 18:26:23 login systemd[1]: Slurm node daemon was
   (ConditionHost=c*).
 [user1@sms ~]$ sudo ssh login sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 1-00:00:00      1   idle c1
+normal*      up 1-00:00:00      1   idle c[1-2]
 ```
 
 ::: notes
@@ -612,6 +612,7 @@ Jul 06 19:03:22 c1 slurmd[1082]: slurmd: CPUs=2 Boards=1
   FeaturesActive=(null)
 [user1@sms ~]$ sudo ssh c1 sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c2
 normal*      up 1-00:00:00      1   down c1
 ```
 (Yes, `c1` is marked `down`---we'll fix that shortly.)
@@ -711,16 +712,6 @@ x
 
 ## A bit more security for the login node
 
-- narrative about brute-force SSH activity
-- verify what ports are listening on login (should really just be SSH)
-- enabling firewalld
-- enabling fail2ban
-- realizing that the default `wwbootstrap` kernel is lacking, and rebuilding it
-
-::: notes
-x
-:::
-
 ### A bit more security for the login node
 
 Not too long after your SMS and/or login nodes are booted, you'll see messages in the SMS `/var/log/secure` like:
@@ -752,13 +743,55 @@ Though #3 will eliminate brute-force password guessing attacks, it's usually not
 x
 :::
 
-### How `fail2ban` works
+### How `fail2ban` works (by default)
 
 1. Monitor `/var/log/secure` and other logs for indicators of brute-force attacks (invalid users, failed passwords, etc.)
-2. If indicators from a specific IP address happen often enough over a period of time, block all access from that address for a period of time.
+2. If indicators from a specific IP address happen often enough over a period of time, use `firewalld` to block all access from that address for a period of time.
 3. Once that period has expired, remove the IP address from the block list.
 
 This reduces the effectiveness of brute-force password guessing by orders of magnitude (~10 guesses per hour versus ~100 or ~1000 guesses per hour).
+
+Including `firewalld` could mean that some necessary services get blocked by default when `firewalld` starts. Let's see what those could be.
+
+::: notes
+x
+:::
+
+### See what processes are listening on the login node
+
+We'll use the `netstat` command to look for sockets that are udp or tcp, listening, and what process the socket is attached to. We omit anything only listening for `localhost` connections.
+```
+[user1@sms ~]$ sudo ssh login netstat -utlp | grep -v localhost
+Active Internet connections (only servers)
+Proto ... Local Address  ... State      PID/Program name
+tcp       0.0.0.0:ssh        LISTEN     1034/sshd: /usr/sbi
+tcp       0.0.0.0:sunrpc     LISTEN     1/init
+tcp6      [::]:ssh           LISTEN     1034/sshd: /usr/sbi
+tcp6      [::]:sunrpc        LISTEN     1/init
+udp       0.0.0.0:sunrpc     0.0.0.0:*  1/init
+udp       0.0.0.0:37036      0.0.0.0:*  1143/rsyslogd
+udp6      [::]:sunrpc        [::]:*     1/init
+```
+
+::: notes
+x
+:::
+
+### See what processes are listening on the login node
+
+`sshd`
+
+: secure shell daemon, the main thing we want to protect against brute force attempts
+
+`init`
+
+: the first process started during booing the operating system. Effectively, this shows up when you participate in NFS file storage, as a server or a client (and login is a client).
+
+`rsyslogd`
+
+: message logging for all kinds of applications and services
+
+Of these, `sshd` is the only one that we need to ensure `firewalld` doesn't block by default. In practice, the `ssh` port (22) is always in the default list of allowed ports.
 
 ::: notes
 x
@@ -766,14 +799,14 @@ x
 
 ### Test installing `fail2ban` on the login node
 
-Install the fail2ban packages on the login node with
+Install the fail2ban packages into the CHROOT with
 ```
 [user1@sms ~]$ sudo yum install --installroot=${CHROOT} \
   fail2ban
 [user1@sms ~]$ sudo chroot ${CHROOT} systemctl enable \
   fail2ban firewalld
 ```
-(this will also install `firewalld`).
+(the `yum` command will also install `firewalld` as a dependency of `fail2ban`).
 
 Add the following to the chroot's `sshd.local` file with `sudo nano ${CHROOT}/etc/fail2ban/jail.d/sshd.local`:
 
@@ -786,16 +819,33 @@ enabled = true
 x
 :::
 
-### Test installing `fail2ban` on the login node
+### Should I run `fail2ban` everywhere?
 
-Don't forget to only run `fail2ban` on the login node, and not the compute nodes:
+`fail2ban` is probably best to keep to the login node, and not the compute nodes:
+
 - Nobody can SSH into your compute nodes from outside.
 - Thus, the only things a compute node could ban would be your SMS or your login node.
 - A malicious or unwitting user could easily ban your login node from a compute node by SSH'ing to it repeatedly, which would effectively be a denial of service.
 
+::: notes
+x
+:::
+
+### Test installing `fail2ban` on the login node
+
 ```
 [user1@sms ~]$ sudo mkdir -p \
-  ${CHROOT}/etc/systemd/system/fail2ban.service.d/
+  ${CHROOT}/etc/systemd/system/fail2ban.service.d/ \
+  ${CHROOT}/etc/systemd/system/firewalld.service.d/
+```
+
+::: notes
+x
+:::
+
+### Test installing `fail2ban` on the login node
+
+```
 [user1@sms ~]$ sudo nano \
   ${CHROOT}/etc/systemd/system/fail2ban.service.d/override.conf
 ```
@@ -804,7 +854,20 @@ Add the lines
 [Unit]
 ConditionHost=|login*
 ```
-then save and exit with Ctrl-X.
+save and exit with Ctrl-X.
+
+::: notes
+x
+:::
+
+### Test installing `fail2ban` on the login node
+
+Finally, duplicate the override file for `firewalld`:
+```
+[user1@sms ~]$ sudo cp \
+${CHROOT}/etc/systemd/system/fail2ban.service.d/override.conf \
+${CHROOT}/etc/systemd/system/firewalld.service.d/override.conf
+```
 
 ::: notes
 x
@@ -820,7 +883,7 @@ Befoer we go further, check if there's anything in `/var/log/secure` on the logi
 Nope. Let's fix that, too.
 
 - Looking in `/etc/rsyslog.conf`, we see a bunch of things commented out, including the line `#authpriv.* /var/log/secure`.
-- Rather than drop in an entirely new rsyslog.conf file that we'd have to maintain, rsyslog will automatically include any `*.conf` files in `/etc/rsyslog.d`.
+- Rather than drop in an entirely new `rsyslog.conf` file that we'd have to maintain, rsyslog will automatically include any `*.conf` files in `/etc/rsyslog.d`.
 - Let's make one of those for the chroot.
 
 ::: notes
@@ -887,7 +950,7 @@ x
 ::: incremental
 
 - How did we get the kernel that the login node is using?
-- Via `wwbootstrap $(uname -r)` (section 3.9.1)
+- Via `wwbootstrap $(uname -r)` on the SMS (section 3.9.1)
 - That section **also** had a command that most of us don't pay close attension to: `echo "drivers += updates/kernel/" >> /etc/warewulf/bootstrap.conf`
 - So though the login node is running the same kernel **version** as the SMS, it may **not** have all the drivers included.
 - Where are the drivers we care about? `lsmod` on the SMS shows a lot of `nf`-named modules for the Netfilter kernel framework.
@@ -1004,7 +1067,7 @@ You can return `c1` to an idle state by running `sudo scontrol update node=c1 st
 [user1@sms ~]$ sudo scontrol update node=c1 state=resume
 [user1@sms ~]$ sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 1-00:00:00      1   idle c1
+normal*      up 1-00:00:00      1   idle c[1-2]
 ```
 
 We should configure things so that we don't have to manually resume nodes every time we reboot them.
@@ -1056,14 +1119,12 @@ x
 
 ### Did it work?
 
-TODO: verify what a successful "return to idle" looks like here, including an uptime of seconds to minutes rather than days.
-
 ```
 [user1@sms ~]$ sudo ssh c1 uptime
- 08:44:31 up 66 days, 17:24,  2 users,  load average: 0.00, 0.04, 0.06
+ 15:52:27 up 1 min,  0 users,  load average: 0.09, 0.06, 0.02
 [user1@sms ~]$ sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 1-00:00:00      1   idle c1
+normal*      up 1-00:00:00      1   idle c[1-2]
 ```
 
 ::: notes
@@ -1072,12 +1133,105 @@ x
 
 ## Decoupling kernels from the SMS
 
-How to install kernels into the chroot and bootstrap from the chroot.
+### Decoupling kernels from the SMS
+
+- If you keep your HPC around for a long period, you might want/need to support different operating systems or releases.
+- Maybe you need to run a few nodes on Rocky 8 while keeping the SMS on Rocky 9 (`wwmkchroot` supports that).
+- Maybe you need to use a different kernel version for exotic hardware or new features, but don't want to risk the stability of your SMS.
+- A simple `wwbootstrap $(uname -r)` won't do that.
 
 ::: notes
 x
 :::
 
+### Decoupling kernels from the SMS
+
+Check `wwbootstrap --help`:
+
+```
+[user1@sms ~]$ wwbootstrap --help
+USAGE: /usr/bin/wwbootstrap [options] kernel_version
+...
+    OPTIONS:
+        -c, --chroot  Look into this chroot directory to find
+                      the kernel
+...
+```
+
+So if we install a kernel into the `${CHROOT}` like any other package, we can bootstrap from it instead of the SMS kernel.
+
+::: notes
+x
+:::
+
+### Install a different kernel into the CHROOT, bootstrap it
+
+```
+[user1@sms ~]$ sudo yum -y install --installroot=$CHROOT kernel
+...
+Installing:
+ kernel  x86_64 5.14.0-427.24.1.el9_4 ...
+...
+Complete!
+[rocky@sms ~]$ sudo wwbootstrap --chroot=${CHROOT} \
+  5.14.0-427.24.1.el9_4.x86_64
+Number of drivers included in bootstrap: 880
+...
+Bootstrap image '5.14.0-427.24.1.el9_4.x86_64' is ready
+Done.
+```
+
+::: notes
+x
+:::
+
+### Check your nodes' provisioning summary
+
+```
+[user1@sms ~]$ wwsh provision list
+NODE                VNFS            BOOTSTRAP         ...    
+=========================================================
+c1                  rocky9.4        6.1.97-1.el9.elrep...
+c2                  rocky9.4        6.1.97-1.el9.elrep...
+g1                  rocky9.4        6.1.97-1.el9.elrep...
+g2                  rocky9.4        6.1.97-1.el9.elrep...
+login               rocky9.4        6.1.97-1.el9.elrep...
+```
+
+### Change the default kernel for nodes, reboot them.
+
+```
+[user1@sms ~]$ sudo wwsh provision set '*' \
+  --bootstrap=5.14.0-427.24.1.el9_4.x86_64
+Are you sure you want to make the following changes to 5
+  node(s):
+
+     SET: BOOTSTRAP            = 5.14.0-427.24.1.el9_4.x86_64
+
+Yes/No> y
+[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
+  c[1-2]
+[user1@sms ~]$ sudo pdsh -w 'g[1-2],login' reboot
+```
+
+::: notes
+x
+:::
+
+### Verify everything came back up
+
+```
+[rocky@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2],login' uname -r \
+  | sort
+c1: 5.14.0-427.24.1.el9_4.x86_64
+c2: 5.14.0-427.24.1.el9_4.x86_64
+g1: 5.14.0-427.24.1.el9_4.x86_64
+g2: 5.14.0-427.24.1.el9_4.x86_64
+login: 5.14.0-427.24.1.el9_4.x86_64
+[rocky@sms ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      2   idle c[1-2]
+```
 
 ## Semi-stateful node provisioning
 
