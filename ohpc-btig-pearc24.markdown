@@ -24,6 +24,8 @@ header-includes: |
 
 ### Acknowledgments and shameless plugs
 
+::: incremental
+
 OpenHPC
 
 : especially Tim Middelkoop (Internet2) and Chris Simmons (Massachusetts Green High Performance Computing Center). They have a BOF at 1:30 Wednesday. You should go to it.
@@ -39,6 +41,8 @@ NSF CC*
 ACCESS
 
 : current maintainers of the project formerly known as the XSEDE Compatible Basic Cluster.
+
+:::
 
 ::: notes
 x
