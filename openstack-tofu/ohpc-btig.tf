@@ -106,6 +106,7 @@ resource "openstack_compute_instance_v2" "sms" {
 resource "openstack_blockstorage_volume_v3" "opt-ohpc" {
   count = var.n_students+1
   size  = 100
+  name  = "hpc${count.index}-opt-ohpc"
 }
 
 resource "openstack_compute_volume_attach_v2" "opt-ohpc-attach" {
@@ -148,6 +149,28 @@ resource "openstack_compute_instance_v2" "node" {
   }
 }
 
+resource "openstack_blockstorage_volume_v3" "vdb-node" {
+  for_each = {
+    for node in local.compute_nodes : "hpc${node[0]}-c${node[1]}" => {
+      cluster_number = node[0]
+      node_number = node[1]
+    }
+  }
+  name = "hpc${each.value.cluster_number}-c${each.value.node_number+1}-vdb"
+  size  = 20
+}
+
+resource "openstack_compute_volume_attach_v2" "vdb-node-attach" {
+  for_each = {
+    for node in local.compute_nodes : "hpc${node[0]}-c${node[1]}" => {
+      cluster_number = node[0]
+      node_number = node[1]
+    }
+  }
+  instance_id = openstack_compute_instance_v2.node["hpc${each.value.cluster_number}-c${each.value.node_number}"].id
+  volume_id   = openstack_blockstorage_volume_v3.vdb-node["hpc${each.value.cluster_number}-c${each.value.node_number}"].id
+}
+
 resource "openstack_networking_port_v2" "port-internal-node" {
   for_each = {
     for node in local.compute_nodes : "hpc${node[0]}-c${node[1]}" => {
@@ -179,6 +202,28 @@ resource "openstack_compute_instance_v2" "gpunode" {
   network {
     port = openstack_networking_port_v2.port-internal-gpunode["hpc${each.value.cluster_number}-g${each.value.node_number}"].id
   }
+}
+
+resource "openstack_blockstorage_volume_v3" "vdb-gpunode" {
+  for_each = {
+    for node in local.compute_nodes : "hpc${node[0]}-g${node[1]}" => {
+      cluster_number = node[0]
+      node_number = node[1]
+    }
+  }
+  name = "hpc${each.value.cluster_number}-g${each.value.node_number+1}-vdb"
+  size  = 20
+}
+
+resource "openstack_compute_volume_attach_v2" "vdb-gpunode-attach" {
+  for_each = {
+    for node in local.compute_nodes : "hpc${node[0]}-g${node[1]}" => {
+      cluster_number = node[0]
+      node_number = node[1]
+    }
+  }
+  instance_id = openstack_compute_instance_v2.gpunode["hpc${each.value.cluster_number}-g${each.value.node_number}"].id
+  volume_id   = openstack_blockstorage_volume_v3.vdb-gpunode["hpc${each.value.cluster_number}-g${each.value.node_number}"].id
 }
 
 resource "openstack_networking_port_v2" "port-internal-gpunode" {
