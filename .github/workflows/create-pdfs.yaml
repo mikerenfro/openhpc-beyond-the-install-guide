@@ -5,6 +5,15 @@ on:
   push:
     branches:
       - pearc24
+    paths:
+      - *.markdown
+      - metadata.yaml
+      - settings.yaml
+      - template.beamer
+      - TechSignatureSealBlack.pdf
+      - beamerthemeCookeville.sty
+      - figures/**
+      - .github/workflows/create-pdfs.yaml
   pull_request:
 
 permissions:
