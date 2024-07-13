@@ -51,6 +51,12 @@
     - name: Grab ssh keys from gpu nodes
       ansible.builtin.shell: |
         for n in $(seq 1 {{ num_gpus }}); do key=$(ssh-keyscan -t ed25519 172.16.2.${n} 2>/dev/null); echo g${n},$key; done > /etc/ssh/ssh_known_hosts
+    - name: Correct location of backup GPT table on compute nodes
+      ansible.builtin.shell: pdsh -w c[1-{{ num_computes }}] "echo quit | sfdisk /dev/vda"
+      when: num_computes > 0
+    - name: Correct location of backup GPT table on gpu nodes
+      ansible.builtin.shell: pdsh -w g[1-{{ num_gpus }}] "echo quit | sfdisk /dev/vda"
+      when: num_gpus > 0
     - name: Restart compute nodes
       ansible.builtin.shell: pdsh -w c[1-{{ num_computes }}] reboot
       when: num_computes > 0
