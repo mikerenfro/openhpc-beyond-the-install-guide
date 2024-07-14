@@ -10,7 +10,7 @@ function remove_old_keys() {
 }
 
 function populate_host_vars() {
-  echo "Populating host_vars for clusters: ${CLUSTER_NUMBERS}"
+  echo "Populating host_vars for clusters: $(echo ${CLUSTER_NUMBERS})"
   for n in $CLUSTER_NUMBERS; do
       host_var_file=${REPO_FOLDER}/ansible/host_vars/hpc${n}-sms
       echo ${host_var_file}
