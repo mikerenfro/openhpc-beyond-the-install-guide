@@ -6,7 +6,7 @@ on:
     branches:
       - pearc24
     paths:
-      - *.markdown
+      - '*.markdown'
       - metadata.yaml
       - settings.yaml
       - template.beamer
