@@ -16,5 +16,6 @@ wait_for_sms_boot  # waits for all SMS instances to be available over ssh before
 echo "Hopefully instances have all booted now"
 
 echo "=== create.sh $(echo ${OHPC_IP4})"
-
+echo "Making student handout .docx files:"
+(cd ${REPO_FOLDER} && for c in ${CLUSTER_NUMBERS}; do python3.12 make-student-handouts.py ${c}; done)
 echo "--- done."
