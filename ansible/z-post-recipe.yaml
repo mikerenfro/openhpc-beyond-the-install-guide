@@ -20,6 +20,7 @@
         installroot: /opt/ohpc/admin/images/rocky9.4
       loop:
         - nano
+        - parted
         - yum
     - name: Rebuild CHROOT
       ansible.builtin.shell: wwvnfs --chroot /opt/ohpc/admin/images/rocky9.4
