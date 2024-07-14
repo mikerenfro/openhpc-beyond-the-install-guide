@@ -157,7 +157,7 @@ resource "openstack_blockstorage_volume_v3" "vdb-node" {
     }
   }
   name = "hpc${each.value.cluster_number}-c${each.value.node_number+1}-vdb"
-  size  = 20
+  size  = 10
 }
 
 resource "openstack_compute_volume_attach_v2" "vdb-node-attach" {
