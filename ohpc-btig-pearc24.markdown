@@ -1198,6 +1198,10 @@ g2                  rocky9.4        6.1.97-1.el9.elrep...
 login               rocky9.4        6.1.97-1.el9.elrep...
 ```
 
+::: notes
+x
+:::
+
 ### Change the default kernel for nodes, reboot them.
 
 ```
@@ -1233,9 +1237,155 @@ PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 1-00:00:00      2   idle c[1-2]
 ```
 
+::: notes
+x
+:::
+
 ## Semi-stateful node provisioning
 
-(talking about the gparted and filesystem-related pieces here.)
+### Downsides of stateless provisioning
+
+Log into `c1` as root, check available disk space and memory, then allocate a 5 GB array in memory:
+
+```
+[user1@sms ~]$ sudo ssh c1
+[root@c1 ~]# df -h /tmp
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           2.9G  843M  2.1G  29% /
+[root@c1 ~]# free -m
+               total        used        free ...
+Mem:            5912        3162        2862 ...
+Swap:              0           0           0 ...
+[root@c1 ~]# module load py3-numpy
+[root@c1 ~]# python3 -c \
+  'import numpy as np; x=np.full((25000, 25000), 1)'
+[root@c1 ~]#
+```
+
+::: notes
+x
+:::
+
+### Downsides of stateless provisioning
+
+Consume some disk space in /tmp, try to allocate the same 5 GB array again:
+
+```
+[root@c1 ~]# dd if=/dev/zero of=/tmp/foo bs=1M count=1024
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 0.63492 s, 1.7 GB/s
+[root@c1 ~]# python3 -c \
+  'import numpy as np; x=np.full((25000, 25000), 1)'
+Killed
+```
+
+::: notes
+x
+:::
+
+### Downsides of stateless provisioning
+
+Clean off the disk usage, allocate the 5 GB array in memory once more, and log out from the node:
+
+```
+[root@c1 ~]# rm /tmp/foo
+[root@c1 ~]# python3 -c \
+  'import numpy as np; x=np.full((25000, 25000), 1)'
+[root@c1 ~]# exit
+[user1@sms ~]$ 
+```
+
+::: notes
+x
+:::
+
+### Summary of the default OpenHPC settings
+
+1. The root filesystem is automatically sized to 50% of the node memory.
+2. There's no swap space.
+3. Consumption of disk space affects the workloads you can run (since disk space is really in RAM).
+
+Even if we reformat node-local storage every time we reboot, moving file storage from RAM to disk is beneficial.
+
+::: notes
+x
+:::
+
+### Examine the existing partition scheme (non-GPU nodes)
+
+Log back into a compute node as root, check the existing partition table:
+
+```
+[user1@sms ~]$ sudo ssh c1 fdisk -l
+Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: gpt
+Disk identifier: FB2976C7-EC9A-6846-901E-06BC57F9688A
+
+Device     Start   End Sectors Size Type
+/dev/vda1   2048  6143    4096   2M EFI System
+```
+
+::: notes
+x
+:::
+
+### Examine the existing partition scheme (GPU nodes)
+
+Log back into a gpu node as root, check the existing partition table:
+
+```
+[user1@sms ~]$ sudo ssh g1 fdisk -l 
+Disk /dev/vda: 60 GiB, 64424509440 bytes, 125829120 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: gpt
+Disk identifier: FB2976C7-EC9A-6846-901E-06BC57F9688A
+
+Device     Start   End Sectors Size Type
+/dev/vda1   2048  6143    4096   2M EFI System
+```
+
+::: notes
+x
+:::
+
+### Summary of existing partition schemes
+
+1. GPT (GUID partition table) method on both node types
+2. Each sector is 512 bytes
+3. Different amounts of disk space on each node type
+4. Existing `/dev/vda1` partition for EFI booting (this is a Jetstream2 requirement for PXE booting)
+
+::: notes
+x
+:::
+
+### Plan for new partition scheme
+
+1. Don't disrupt the existing `/dev/vda1` partition.
+2. 500 MB partition for `/boot`.
+3. 2 GB partition for swap.
+4. 5 GB partition for `/`.
+5. remaining space for `/tmp`.
+
+::: notes
+x
+:::
+
+### Define new partition scheme
+
+Make a copy of an OpenHPC-provided example partition scheme, then edit it:
+```
+[user1@sms ~]$ sudo cp \
+  /etc/warewulf/filesystem/examples/gpt_example.cmds \
+  /etc/warewulf/filesystem/obtig.cmds
+[user1@sms ~]$ sudo nano /etc/warewulf/filesystem/obtig.cmds
+```
 
 ::: notes
 x
@@ -1244,6 +1394,11 @@ x
 ## Management of GPU drivers
 
 (installing GPU drivers -- mostly rsync'ing a least-common-denominator chroot into a GPU-named chroot, copying the NVIDIA installer into the chroot, mounting /proc and /sys, running the installer, umounting /proc and /sys, and building a second VNFS)
+
+
+::: notes
+x
+:::
 
 ### See what we have, download the driver
 
@@ -1257,6 +1412,11 @@ x
   ${B}/${NV}/NVIDIA-Linux-x86_64-${NV}.run
 ```
 
+
+::: notes
+x
+:::
+
 ### Prepare to install the driver
 
 ```
@@ -1266,6 +1426,11 @@ x
 [user1@sms ~]$ sudo cp NVIDIA-Linux-x86_64-${NV}.run \
   $CHROOT/root
 ```
+
+
+::: notes
+x
+:::
 
 ### Install the driver, clean up, update VNFS
 ```
