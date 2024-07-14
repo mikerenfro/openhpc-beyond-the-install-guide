@@ -1275,6 +1275,7 @@ Consume some disk space in /tmp, try to allocate the same 5 GB array again:
 1024+0 records in
 1024+0 records out
 1073741824 bytes (1.1 GB, 1.0 GiB) copied, 0.63492 s, 1.7 GB/s
+[root@c1 ~]# module load py3-numpy
 [root@c1 ~]# python3 -c \
   'import numpy as np; x=np.full((25000, 25000), 1)'
 Killed
@@ -1312,21 +1313,42 @@ Even if we reformat node-local storage every time we reboot, moving file storage
 x
 :::
 
+### Strategies
+
+::: {.columns align=top}
+::: {.column width=50%}
+
+#### Typical bare-metal node
+
+- PXE handled by network card, all disks available for node-local storage
+- Usually, the default kernel contains all the drivers you need
+
+:::
+::: {.column width=50%}
+
+#### Jetstream2 instance
+
+- First disk (/dev/vda) exists to provide iPXE support, additional disks (/dev/vdb, ...) available for node-local storage
+- Some extra steps may be needed to enable storage and filesystem kernel modules
+
+:::
+:::
+
+::: notes
+x
+:::
+
 ### Examine the existing partition scheme (non-GPU nodes)
 
 Log back into a compute node as root, check the existing partition table:
 
 ```
-[user1@sms ~]$ sudo ssh c1 fdisk -l
-Disk /dev/vda: 20 GiB, 21474836480 bytes, 41943040 sectors
+[user1@sms ~]$ sudo ssh c1 fdisk -l /dev/vdb
+sudo ssh c2 fdisk -l /dev/vdb
+Disk /dev/vdb: 10 GiB, 10737418240 bytes, 20971520 sectors
 Units: sectors of 1 * 512 = 512 bytes
 Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
-Disklabel type: gpt
-Disk identifier: FB2976C7-EC9A-6846-901E-06BC57F9688A
-
-Device     Start   End Sectors Size Type
-/dev/vda1   2048  6143    4096   2M EFI System
 ```
 
 ::: notes
@@ -1338,16 +1360,11 @@ x
 Log back into a gpu node as root, check the existing partition table:
 
 ```
-[user1@sms ~]$ sudo ssh g1 fdisk -l 
-Disk /dev/vda: 60 GiB, 64424509440 bytes, 125829120 sectors
+[rocky@sms ~]$ sudo ssh g1 fdisk -l /dev/vdb
+Disk /dev/vdb: 20 GiB, 21474836480 bytes, 41943040 sectors
 Units: sectors of 1 * 512 = 512 bytes
 Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
-Disklabel type: gpt
-Disk identifier: FB2976C7-EC9A-6846-901E-06BC57F9688A
-
-Device     Start   End Sectors Size Type
-/dev/vda1   2048  6143    4096   2M EFI System
 ```
 
 ::: notes
@@ -1359,7 +1376,6 @@ x
 1. GPT (GUID partition table) method on both node types
 2. Each sector is 512 bytes
 3. Different amounts of disk space on each node type
-4. Existing `/dev/vda1` partition for EFI booting (this is a Jetstream2 requirement for PXE booting)
 
 ::: notes
 x
@@ -1367,10 +1383,10 @@ x
 
 ### Plan for new partition scheme
 
-1. Don't disrupt the existing `/dev/vda1` partition.
-2. 500 MB partition for `/boot`.
-3. 2 GB partition for swap.
-4. 5 GB partition for `/`.
+1. Destructive partitioning of `/dev/vdb` on each boot.
+2. 512 MiB partition for `/boot`.
+3. 2 GiB partition for swap.
+4. 2 GiB partition for `/`.
 5. remaining space for `/tmp`.
 
 ::: notes
@@ -1379,17 +1395,200 @@ x
 
 ### Define new partition scheme
 
-Make a copy of an OpenHPC-provided example partition scheme, then edit it:
+Could make a copy of an OpenHPC-provided example partition scheme (in `/etc/warefule/filesystem/examples`), but we'll start one from scratch:
 ```
-[user1@sms ~]$ sudo cp \
-  /etc/warewulf/filesystem/examples/gpt_example.cmds \
-  /etc/warewulf/filesystem/obtig.cmds
-[user1@sms ~]$ sudo nano /etc/warewulf/filesystem/obtig.cmds
+[user1@sms ~]$ sudo nano \
+  /etc/warewulf/filesystem/jetstream.cmds
 ```
 
 ::: notes
 x
 :::
+
+### Define new partition scheme
+
+Contents of `jetstream.cmds` (part 1):
+```
+select /dev/vdb
+mklabel gpt
+```
+On Jetstream2:
+
+- we leave `/dev/vda` unmodified, since we need it for iPXE booting,
+- we attached a new volume as `/dev/vdb` for on-disk storage,
+- prepare `/dev/vdb` for GPT (more critical on larger disks than we're using).
+
+::: notes
+x
+:::
+
+### Define new partition scheme
+
+Contents of `jetstream.cmds` (part 2):
+```
+mkpart primary 1MiB 3MiB
+mkpart primary ext4 3MiB 515MiB
+mkpart primary linux-swap 515MiB 2563MiB
+mkpart primary ext4 2563MiB 4611MiB
+mkpart primary ext4 4611MiB 100%
+name 2 boot
+name 3 swap
+name 4 root
+name 5 tmp
+```
+
+- Create partitions and label them.
+
+::: notes
+x
+:::
+
+### Define new partition scheme
+
+Contents of `jetstream.cmds` (part 3):
+```
+## mkfs NUMBER FS-TYPE [ARGS...]
+mkfs 2 ext4 -L boot
+mkfs 3 swap
+mkfs 4 ext4 -L root
+mkfs 5 ext4 -L tmp
+## fstab NUMBER mountpoint type opts freq passno
+fstab 4 /     ext4 defaults 0 0
+fstab 2 /boot ext4 defaults 0 0
+fstab 3 none  swap defaults 0 0
+fstab 5 /tmp  ext4 defaults 0 0
+```
+
+- Format partitions and mount them.
+- Save and exit `nano` with `Ctrl-X`.
+
+::: notes
+x
+:::
+
+### What could possibly go wrong?
+
+- A lot, if you consider some edge cases and corner cases.
+- This was by far the slowest-progressing and most error-prone section of the tutorial to develop.
+- Using `wwsh provision set NODE --preshell=1` and/or `--postshell=1` during debugging was invaluable.
+
+::: notes
+x
+:::
+
+### What went wrong (part 1)
+
+![Device not ready, retrying]
+
+[Device not ready, retrying]: figures/starting-the-provision-handler-filesystems-not-ready-retrying.png { width=90% }
+
+- Running `dmesg | grep vd` at the `postshell` command prompt confirmed that no `/dev/vd` devices were found.
+
+::: notes
+x
+:::
+
+### How it got fixed (part 1)
+
+- Comparing the `lsmod` output on the failing node versus the SMS indicated we were missing the `virtio_blk` kernel module.
+- Running `modprobe virtio_blk` and `dmesg | grep vd` at the `postshell` command prompt confirmed this.
+- Warewulf fix is to:
+  - run `echo modprobe += virtio_blk | sudo tee -a /etc/warewulf/bootstrap.conf`
+  - run `sudo wwbootstrap KERNEL_VERSION`
+  - reboot the node and try again.
+
+::: notes
+x
+:::
+
+### What went wrong (part 2)
+
+![Mounting /, error]
+
+[Mounting /, error]: figures/mounting-root-error.png { width=90% }
+
+::: notes
+x
+:::
+
+### How it got fixed (part 2)
+
+![`parted -l` looks ok]
+
+[`parted -l` looks ok]: figures/parted-l-looks-ok.png { width=70% }
+
+- running `parted -l` showed a valid partition table
+
+::: notes
+x
+:::
+
+### How it got fixed (part 2)
+
+::: incremental
+
+- Trying to mount the proposed root partition with `mkdir /mnt ; mount -t auto /dev/sdb4 /mnt` failed with `mount: mounting /dev/vdb4 as /mnt failed: No such file or directory`
+- But both `/mnt` and `/dev/sdb4` both existed, as seen from `ls -l` on each of them.
+- Surprisingly, when I left the root partition as a ramdisk and tried to partition and mount swap and `/tmp` from disk partitions, provisioning threw errors, but post-provisioning, both swap and `/tmp` **were available** to the node!
+
+:::
+
+::: notes
+x
+:::
+
+### How it got fixed (part 2)
+
+::: incremental
+
+- What was different? A missing filesystem module in the provisioning kernel (in my case, `ext4`).
+- Running `modprobe ext4` at the `postshell` command prompt and re-running the `mount` command above caused the filesystem to mount.
+- Warewulf fix is to:
+  - run `echo modprobe += ext4 | sudo tee -a /etc/warewulf/bootstrap.conf`
+  - run `sudo wwbootstrap KERNEL_VERSION`
+  - reboot the node and try again.
+
+:::
+
+::: notes
+x
+:::
+
+### Final result on a compute node (part 1)
+
+```
+[user1@sms ~]$ sudo ssh c1 "df ; free -m"
+Filesystem  1K-blocks     Used Available Use% Mounted on
+devtmpfs      2996844        0   2996844   0% /dev
+/dev/vdb4     1992552   873376    997936  47% /
+tmpfs         3027036        0   3027036   0% /dev/shm
+tmpfs         1210816     8728   1202088   1% /run
+/dev/vdb2      498900       40    462164   1% /boot
+/dev/vdb5     5584512       76   5279900   1% /tmp
+...
+       total  used  free  shared  buff/cache  available
+Mem:    5912   382  4844       8         939       5530
+Swap:   2047     0  2047
+```
+
+Note that the `used` memory column has dropped by nearly 90% from before.
+
+### Final result on a compute node (part 2)
+
+Consume 5 GiB of space in /tmp (we only used 1 GiB previously), then allocate 5 GB for an array in memory:
+
+```
+[user1@sms ~]$ sudo ssh c1
+[root@c1 ~]# dd if=/dev/zero of=/tmp/foo bs=1M count=5120
+5120+0 records in
+5120+0 records out
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 8.97811 s, 598 MB/s
+[root@c1 ~]# module load py3-numpy
+[root@c1 ~]# python3 -c \
+  'import numpy as np; x=np.full((25000, 25000), 1)'
+[root@c1 ~]# rm /tmp/foo
+```
+No `Killed` messages due to running out of memory. We're able to consume nearly all the `/tmp` space and all the RAM without conflict.
 
 ## Management of GPU drivers
 
