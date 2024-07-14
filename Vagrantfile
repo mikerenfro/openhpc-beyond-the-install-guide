@@ -17,7 +17,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", privileged: false, inline: <<-SHELLUNPRIV    
     ( if [ ! -f /vagrant/openstack-tofu/disk.img ]; then git clone https://github.com/mikerenfro/ohpc-jetstream2.git && cd ohpc-jetstream2 && ./ipxe.sh && cp disk.img /vagrant/openstack-tofu ; else echo "/vagrant/openstack-tofu/disk.img already exists"; fi )
     ls -l /vagrant/openstack-tofu/disk.img
-    for p in ansible python-docx python-openstackclient xdcdpass; do
+    for p in ansible python-docx python-openstackclient xkcdpass; do
       pip3.12 install --user $p
     done
     mkdir -p ~/.bashrc.d/
