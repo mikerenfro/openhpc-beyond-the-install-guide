@@ -1676,7 +1676,7 @@ x
   sudo tee -a /etc/warewulf/bootstrap.conf
 [user1@sms ~]$ echo modprobe += ext4 | \
   sudo tee -a /etc/warewulf/bootstrap.conf
-[user1@sms ~]$ wwbootstrap $(uname -r)
+[user1@sms ~]$ sudo wwbootstrap $(uname -r)
 [user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2]' reboot
 ```
 
@@ -1718,7 +1718,7 @@ Consume 5 GiB of space in /tmp (we only used 1 GiB previously), then allocate 5 
   'import numpy as np; x=np.full((25000, 25000), 1)'
 [root@c1 ~]# rm /tmp/foo
 ```
-No `Killed` messages due to running out of memory. We're able to consume much more `/tmp` space and all the RAM without conflict.
+No `Killed` messages due to running out of memory. We're able to consume much more `/tmp` space and all practically the RAM without conflict.
 
 ## Management of GPU drivers
 
@@ -1801,29 +1801,4 @@ Can adapt a lot of Mike's CaRCC Emerging Centers talk from a couple years ago fo
 
 ::: notes
 x
-:::
-
-### Sample slide
-
-::: {.columns align=center}
-
-::: {.column width=65%}
-#### Left column
-
-This slide has two columns. They don't always have to have columns. It also has a titled block of content in the left column. Make sure you've always got a `::: notes` block after the slide content, even if it has no content.
-:::
-
-::: {.column width=35%}
-Use `#` and `##` headers in the Markdown file to make level-1 and level-2 headings, `###` headers to make slide titles, and `####` to make block titles.
-:::
-
-:::
-
-::: notes
-
-This is my note.
-
-- It can contain Markdown
-- like this list
-
 :::
