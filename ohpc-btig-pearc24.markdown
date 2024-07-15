@@ -1384,7 +1384,7 @@ x
 1. GPT (GUID partition table) method on both node types
 2. Different amounts of disk space on each node type
 3. Each sector is 512 bytes
-4. Bootable partition 1 (from 1049 kB == 1 MiB to 3146 kB == 3 MiB) for iPXE
+4. Bootable partition 1 (from 1049 kB = 1 MiB to 3146 kB = 3 MiB) for iPXE
 
 ::: notes
 x
@@ -1404,7 +1404,7 @@ x
 
 ### Define new partition scheme
 
-Could make a copy of an OpenHPC-provided example partition scheme (in `/etc/warefule/filesystem/examples`), but we'll start one from scratch:
+Could make a copy of an OpenHPC-provided example partition scheme (in `/etc/warewulf/filesystem/examples`), but we'll start one from scratch:
 ```
 [user1@sms ~]$ sudo nano \
   /etc/warewulf/filesystem/jetstream.cmds
