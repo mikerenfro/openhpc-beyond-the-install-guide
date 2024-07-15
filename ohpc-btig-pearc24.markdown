@@ -1328,7 +1328,7 @@ x
 
 #### Jetstream2 instance
 
-- First disk (/dev/vda) exists to provide iPXE support, additional disks (/dev/vdb, ...) available for node-local storage
+- First disk (/dev/vda) exists to provide iPXE support, so don't break that
 - Some extra steps may be needed to enable storage and filesystem kernel modules
 
 :::
@@ -1343,12 +1343,15 @@ x
 Log back into a compute node as root, check the existing partition table:
 
 ```
-[user1@sms ~]$ sudo ssh c1 fdisk -l /dev/vdb
-sudo ssh c2 fdisk -l /dev/vdb
-Disk /dev/vdb: 10 GiB, 10737418240 bytes, 20971520 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
+[user1@sms ~]$ sudo ssh c1 parted -l /dev/vda
+Model: Virtio Block Device (virtblk)
+Disk /dev/vda: 21.5GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system     Name  Flags
+ 1      1049kB  3146kB  2097kB                  EFI   boot, esp
 ```
 
 ::: notes
@@ -1360,11 +1363,16 @@ x
 Log back into a gpu node as root, check the existing partition table:
 
 ```
-[rocky@sms ~]$ sudo ssh g1 fdisk -l /dev/vdb
-Disk /dev/vdb: 20 GiB, 21474836480 bytes, 41943040 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
+[rocky@sms ~]$ sudo ssh g1 parted -l /dev/vda
+parted -l /dev/vda
+Model: Virtio Block Device (virtblk)
+Disk /dev/vda: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  3146kB  2097kB               EFI   boot, esp
 ```
 
 ::: notes
@@ -1374,8 +1382,9 @@ x
 ### Summary of existing partition schemes
 
 1. GPT (GUID partition table) method on both node types
-2. Each sector is 512 bytes
-3. Different amounts of disk space on each node type
+2. Different amounts of disk space on each node type
+3. Each sector is 512 bytes
+4. Bootable partition 1 (from 1049 kB == 1 MiB to 3146 kB == 3 MiB) for iPXE
 
 ::: notes
 x
@@ -1383,7 +1392,7 @@ x
 
 ### Plan for new partition scheme
 
-1. Destructive partitioning of `/dev/vdb` on each boot.
+1. Non-destructive partitioning of `/dev/vda` once (outside of Warewulf, with a `parted` script).
 2. 512 MiB partition for `/boot`.
 3. 2 GiB partition for swap.
 4. 2 GiB partition for `/`.
@@ -1409,14 +1418,16 @@ x
 
 Contents of `jetstream.cmds` (part 1):
 ```
-select /dev/vdb
-mklabel gpt
+select /dev/vda
 ```
 On Jetstream2:
 
-- we leave `/dev/vda` unmodified, since we need it for iPXE booting,
-- we attached a new volume as `/dev/vdb` for on-disk storage,
-- prepare `/dev/vdb` for GPT (more critical on larger disks than we're using).
+- we leave `/dev/vda1` unmodified, since we need it for iPXE booting,
+- we "semi-manually" (i.e., outside of Warewulf, but using a script) partition the rest of `/dev/vda` to include
+  - 512 MiB for `/boot`
+  - 2 GiB for swap
+  - 2 GiB for `/`
+  - remaining space for `/tmp`
 
 ::: notes
 x
@@ -1426,18 +1437,18 @@ x
 
 Contents of `jetstream.cmds` (part 2):
 ```
-mkpart primary 1MiB 3MiB
-mkpart primary ext4 3MiB 515MiB
-mkpart primary linux-swap 515MiB 2563MiB
-mkpart primary ext4 2563MiB 4611MiB
-mkpart primary ext4 4611MiB 100%
+# mkpart primary ext4 3MiB 515MiB
+# mkpart primary linux-swap 515MiB 2563MiB
+# mkpart primary ext4 2563MiB 4611MiB
+# mkpart primary ext4 4611MiB 100%
 name 2 boot
 name 3 swap
 name 4 root
 name 5 tmp
 ```
 
-- Create partitions and label them.
+- Note how to create partitions, and add commands to label them.
+- `mkpart` commands are intended to be comments here, so that Warewulf can ignore them, but we can keep everything in one place.
 
 ::: notes
 x
@@ -1466,11 +1477,115 @@ fstab 5 /tmp  ext4 defaults 0 0
 x
 :::
 
+### Partition the disks outside of Warewulf
+
+- `parted` has a `--script` parameter helpful for passing in one or more commands at the command line.
+- We want to pass in the commented mkpart commands of our `jetstream.cmds` file.
+
+::: notes
+x
+:::
+
+### Show the `mkpart` lines
+
+```
+[user1@sms ~]$ grep mkpart \
+  /etc/warewulf/filesystem/jetstream-vda.cmds
+# mkpart primary ext4 3MiB 515MiB
+# mkpart primary linux-swap 515MiB 2663MiB
+# mkpart primary ext4 2663MiB 4611MiB
+# mkpart primary ext4 4611MiB 100%
+```
+
+::: notes
+x
+:::
+
+### Take out the `#` signs from the `mkpart` lines
+
+```
+[user1@sms ~]$ grep mkpart \
+  /etc/warewulf/filesystem/jetstream-vda.cmds | sed 's/#//g'
+ mkpart primary ext4 3MiB 515MiB
+ mkpart primary linux-swap 515MiB 2663MiB
+ mkpart primary ext4 2663MiB 4611MiB
+ mkpart primary ext4 4611MiB 100%
+```
+
+::: notes
+x
+:::
+
+### Put all the commands on one line
+
+```
+[user1@sms ~]$ echo $(grep mkpart \
+  /etc/warewulf/filesystem/jetstream-vda.cmds | sed 's/#//g')
+mkpart primary ext4 3MiB 515MiB mkpart primary linux-swap 
+  515MiB 2663MiB mkpart primary ext4 2663MiB 4611MiB mkpart
+  primary ext4 4611MiB 100%
+```
+
+::: notes
+x
+:::
+
+### Partition the drive
+
+(all of the below goes on one literal line, no backslashes, line breaks, or anything else)
+```
+[user1@sms ~]$ sudo ssh g2 parted --script /dev/vda
+  $(echo $(grep mkpart
+  /etc/warewulf/filesystem/jetstream-vda.cmds |
+  sed 's/#//g'))
+```
+
+::: notes
+x
+:::
+
+### Check your results
+
+```
+[user1@sms ~]$ sudo ssh g2 parted -l
+Model: Virtio Block Device (virtblk)
+Disk /dev/vda: 64.4GB
+...
+Number Start  End    Size   File system    Name    Flags
+ 1     1049kB 3146kB 2097kB                EFI     boot, esp
+ 2     3146kB 540MB  537MB  ext4           primary
+ 3     540MB  2792MB 2252MB linux-swap(v1) primary swap
+ 4     2792MB 4835MB 2043MB ext4           primary
+ 5     4835MB 64.4GB 59.6GB ext4           primary
+```
+
+Now repeat the previous `sudo ssh NODE parted --script` command for the other nodes (`c1`, `c2`, and `g1`).
+
+::: notes
+x
+:::
+
+### Apply the Warewulf filesystem provisioning commands to the nodes
+
+```
+[user1@sms ~]$ sudo wwsh provision set 'c*' \
+  --filesystem=jetstream-vda
+[user1@sms ~]$ sudo wwsh provision set 'g*' \
+  --filesystem=jetstream-vda
+```
+
+**Do not reboot your nodes yet!**
+
+::: notes
+x
+:::
+
 ### What could possibly go wrong?
 
 - A lot, if you consider some edge cases and corner cases.
 - This was by far the slowest-progressing and most error-prone section of the tutorial to develop.
 - Using `wwsh provision set NODE --preshell=1` and/or `--postshell=1` during debugging was invaluable.
+- Rather than have y'all suffer through this without easy access to a console, I'll take you through what would have gone wrong if we'd rebooted just now.
 
 ::: notes
 x
@@ -1554,17 +1669,32 @@ x
 x
 :::
 
+### Make the necessary `wwbootstrap` changes, then reboot your nodes
+
+```
+[user1@sms ~]$ echo modprobe += virtio_blk | \
+  sudo tee -a /etc/warewulf/bootstrap.conf
+[user1@sms ~]$ echo modprobe += ext4 | \
+  sudo tee -a /etc/warewulf/bootstrap.conf
+[user1@sms ~]$ wwbootstrap $(uname -r)
+[user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2]' reboot
+```
+
+::: notes
+x
+:::
+
 ### Final result on a compute node (part 1)
 
 ```
-[user1@sms ~]$ sudo ssh c1 "df ; free -m"
-Filesystem  1K-blocks     Used Available Use% Mounted on
-devtmpfs      2996844        0   2996844   0% /dev
-/dev/vdb4     1992552   873376    997936  47% /
-tmpfs         3027036        0   3027036   0% /dev/shm
-tmpfs         1210816     8728   1202088   1% /run
-/dev/vdb2      498900       40    462164   1% /boot
-/dev/vdb5     5584512       76   5279900   1% /tmp
+[user1@sms ~]$ sudo ssh c1 "df -h; free -m"
+Filesystem                Size  Used Avail Use% Mounted on
+devtmpfs                  2.9G     0  2.9G   0% /dev
+/dev/vda4                 1.9G  853M  914M  49% /
+tmpfs                     2.9G     0  2.9G   0% /dev/shm
+tmpfs                     1.2G  8.5M  1.2G   1% /run
+/dev/vda2                 488M   40K  452M   1% /boot
+/dev/vda5                  16G   72K   15G   1% /tmp
 ...
        total  used  free  shared  buff/cache  available
 Mem:    5912   382  4844       8         939       5530
@@ -1588,7 +1718,7 @@ Consume 5 GiB of space in /tmp (we only used 1 GiB previously), then allocate 5 
   'import numpy as np; x=np.full((25000, 25000), 1)'
 [root@c1 ~]# rm /tmp/foo
 ```
-No `Killed` messages due to running out of memory. We're able to consume nearly all the `/tmp` space and all the RAM without conflict.
+No `Killed` messages due to running out of memory. We're able to consume much more `/tmp` space and all the RAM without conflict.
 
 ## Management of GPU drivers
 
