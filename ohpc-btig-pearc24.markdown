@@ -605,7 +605,6 @@ Verify that the compute node still starts `slurmd` (it can also run `sinfo`).
 [user1@sms ~]$ sudo ssh c1 systemctl status slurmd
 o slurmd.service - Slurm node daemon
 ...
-Jul 06 19:03:22 c1 systemd[1]: Started Slurm node daemon.
 Jul 06 19:03:22 c1 slurmd[1082]: slurmd: CPUs=2 Boards=1 
   Sockets=2 Cores=1 Threads=1 Memory=5912 TmpDisk=2956
   Uptime=28 CPUSpecList=(null) FeaturesAvail=(null)
@@ -1131,116 +1130,6 @@ normal*      up 1-00:00:00      1   idle c[1-2]
 x
 :::
 
-## Decoupling kernels from the SMS
-
-### Decoupling kernels from the SMS
-
-- If you keep your HPC around for a long period, you might want/need to support different operating systems or releases.
-- Maybe you need to run a few nodes on Rocky 8 while keeping the SMS on Rocky 9 (`wwmkchroot` supports that).
-- Maybe you need to use a different kernel version for exotic hardware or new features, but don't want to risk the stability of your SMS.
-- A simple `wwbootstrap $(uname -r)` won't do that.
-
-::: notes
-x
-:::
-
-### Decoupling kernels from the SMS
-
-Check `wwbootstrap --help`:
-
-```
-[user1@sms ~]$ wwbootstrap --help
-USAGE: /usr/bin/wwbootstrap [options] kernel_version
-...
-    OPTIONS:
-        -c, --chroot  Look into this chroot directory to find
-                      the kernel
-...
-```
-
-So if we install a kernel into the `${CHROOT}` like any other package, we can bootstrap from it instead of the SMS kernel.
-
-::: notes
-x
-:::
-
-### Install a different kernel into the CHROOT, bootstrap it
-
-```
-[user1@sms ~]$ sudo yum -y install --installroot=$CHROOT kernel
-...
-Installing:
- kernel  x86_64 5.14.0-427.24.1.el9_4 ...
-...
-Complete!
-[user1@sms ~]$ sudo wwbootstrap --chroot=${CHROOT} \
-  5.14.0-427.24.1.el9_4.x86_64
-Number of drivers included in bootstrap: 880
-...
-Bootstrap image '5.14.0-427.24.1.el9_4.x86_64' is ready
-Done.
-```
-
-::: notes
-x
-:::
-
-### Check your nodes' provisioning summary
-
-```
-[user1@sms ~]$ wwsh provision list
-NODE                VNFS            BOOTSTRAP         ...    
-=========================================================
-c1                  rocky9.4        6.1.97-1.el9.elrep...
-c2                  rocky9.4        6.1.97-1.el9.elrep...
-g1                  rocky9.4        6.1.97-1.el9.elrep...
-g2                  rocky9.4        6.1.97-1.el9.elrep...
-login               rocky9.4        6.1.97-1.el9.elrep...
-```
-
-::: notes
-x
-:::
-
-### Change the default kernel for nodes, reboot them.
-
-```
-[user1@sms ~]$ sudo wwsh provision set '*' \
-  --bootstrap=5.14.0-427.24.1.el9_4.x86_64
-Are you sure you want to make the following changes to 5
-  node(s):
-
-     SET: BOOTSTRAP            = 5.14.0-427.24.1.el9_4.x86_64
-
-Yes/No> y
-[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
-  c[1-2]
-[user1@sms ~]$ sudo pdsh -w 'g[1-2],login' reboot
-```
-
-::: notes
-x
-:::
-
-### Verify everything came back up
-
-```
-[user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2],login' uname -r \
-  | sort
-c1: 5.14.0-427.24.1.el9_4.x86_64
-c2: 5.14.0-427.24.1.el9_4.x86_64
-g1: 5.14.0-427.24.1.el9_4.x86_64
-g2: 5.14.0-427.24.1.el9_4.x86_64
-login: 5.14.0-427.24.1.el9_4.x86_64
-[user1@sms ~]$ sinfo
-PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 1-00:00:00      2   idle c[1-2]
-```
-
-::: notes
-x
-:::
-
 ## Semi-stateful node provisioning
 
 ### Downsides of stateless provisioning
@@ -1409,6 +1298,9 @@ Could make a copy of an OpenHPC-provided example partition scheme (in `/etc/ware
 [user1@sms ~]$ sudo nano \
   /etc/warewulf/filesystem/jetstream.cmds
 ```
+
+- The `.cmds` file is a mix of `parted` commands, `mkfs` parameters, and `/etc/fstab` information.
+- It's typical, **but not 100% required**, to give a full set of `select`, `mkpart`, and `name` commands for `parted`.
 
 ::: notes
 x
@@ -1720,10 +1612,123 @@ Consume 5 GiB of space in /tmp (we only used 1 GiB previously), then allocate 5 
 ```
 No `Killed` messages due to running out of memory. We're able to consume much more `/tmp` space and all practically the RAM without conflict.
 
+::: notes
+x
+:::
+
+## Decoupling kernels from the SMS
+
+### Decoupling kernels from the SMS
+
+- If you keep your HPC around for a long period, you might want/need to support different operating systems or releases.
+- Maybe you need to run a few nodes on Rocky 8 while keeping the SMS on Rocky 9 (`wwmkchroot` supports that).
+- Maybe you need to use a different kernel version for exotic hardware or new features, but don't want to risk the stability of your SMS.
+- A simple `wwbootstrap $(uname -r)` won't do that.
+
+::: notes
+x
+:::
+
+### Decoupling kernels from the SMS
+
+Check `wwbootstrap --help`:
+
+```
+[user1@sms ~]$ wwbootstrap --help
+USAGE: /usr/bin/wwbootstrap [options] kernel_version
+...
+    OPTIONS:
+        -c, --chroot  Look into this chroot directory to find
+                      the kernel
+...
+```
+
+So if we install a kernel into the `${CHROOT}` like any other package, we can bootstrap from it instead of the SMS kernel.
+
+::: notes
+x
+:::
+
+### Install a different kernel into the CHROOT, bootstrap it
+
+```
+[user1@sms ~]$ sudo yum -y install --installroot=$CHROOT kernel
+...
+Installing:
+ kernel  x86_64 5.14.0-427.24.1.el9_4 ...
+...
+Complete!
+[user1@sms ~]$ sudo wwbootstrap --chroot=${CHROOT} \
+  5.14.0-427.24.1.el9_4.x86_64
+Number of drivers included in bootstrap: 880
+...
+Bootstrap image '5.14.0-427.24.1.el9_4.x86_64' is ready
+Done.
+```
+
+::: notes
+x
+:::
+
+### Check your nodes' provisioning summary
+
+```
+[user1@sms ~]$ wwsh provision list
+NODE                VNFS            BOOTSTRAP         ...    
+=========================================================
+c1                  rocky9.4        6.1.97-1.el9.elrep...
+c2                  rocky9.4        6.1.97-1.el9.elrep...
+g1                  rocky9.4        6.1.97-1.el9.elrep...
+g2                  rocky9.4        6.1.97-1.el9.elrep...
+login               rocky9.4        6.1.97-1.el9.elrep...
+```
+
+::: notes
+x
+:::
+
+### Change the default kernel for nodes, reboot them.
+
+```
+[user1@sms ~]$ sudo wwsh provision set '*' \
+  --bootstrap=5.14.0-427.24.1.el9_4.x86_64
+Are you sure you want to make the following changes to 5
+  node(s):
+
+     SET: BOOTSTRAP            = 5.14.0-427.24.1.el9_4.x86_64
+
+Yes/No> y
+[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
+  c[1-2]
+[user1@sms ~]$ sudo pdsh -w 'g[1-2],login' reboot
+```
+
+::: notes
+x
+:::
+
+### Verify everything came back up
+
+```
+[user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2],login' uname -r \
+  | sort
+c1: 5.14.0-427.24.1.el9_4.x86_64
+c2: 5.14.0-427.24.1.el9_4.x86_64
+g1: 5.14.0-427.24.1.el9_4.x86_64
+g2: 5.14.0-427.24.1.el9_4.x86_64
+login: 5.14.0-427.24.1.el9_4.x86_64
+[user1@sms ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      2   idle c[1-2]
+```
+
+::: notes
+x
+:::
+
 ## Management of GPU drivers
 
 (installing GPU drivers -- mostly rsync'ing a least-common-denominator chroot into a GPU-named chroot, copying the NVIDIA installer into the chroot, mounting /proc and /sys, running the installer, umounting /proc and /sys, and building a second VNFS)
-
 
 ::: notes
 x
@@ -1781,7 +1786,13 @@ x
 
 ## Configuration settings for different node types
 
-(have been leading into this a bit with the wwsh file entries, systemd conditions, etc. But here we can also talk about nodes with two drives instead of one, nodes with and without Infiniband, nodes with different provisioning interfaces, etc.)
+What tools have we used so far to define node settings?
+
+1. `wwsh node` for node name and network information (MACs, IPs, provisioning interface)
+2. `wwsh provision` for VNFS, kernel, kernel parameters, files
+3. When the files include `systemd` services, other options become possible via `ConditionHost` or similar statements
+
+Manually building these up over time and storing the results in the Warewulf database may be tedious to review, and we might want to easily port our setup to a dev/test environment, a new version of OpenHPC, etc.
 
 ::: notes
 x
@@ -1789,7 +1800,15 @@ x
 
 ## Automation for Warewulf3 provisioning
 
-(here we can show some sample Python scripts where we can store node attributes and logic for managing the different VNFSes)
+**Any** kind of automation, scripting, or orchestration is beneficial for managing cluster settings:
+
+- shell scripts,
+- Python scripts,
+- Ansible playbooks,
+- Puppet manifests,
+- etc.
+
+Mike's used Ansible as part of the Basic Cluster project; Tim's `ohpc-jetstream2` repository does the same. TN Tech uses Python scripts for their Warewulf management.
 
 ::: notes
 x
