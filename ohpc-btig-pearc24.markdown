@@ -1365,7 +1365,7 @@ x
 
 ```
 [user1@sms ~]$ grep mkpart \
-  /etc/warewulf/filesystem/jetstream-vda.cmds
+  /etc/warewulf/filesystem/jetstream.cmds
 # mkpart primary ext4 3MiB 515MiB
 # mkpart primary linux-swap 515MiB 2663MiB
 # mkpart primary ext4 2663MiB 4611MiB
@@ -1380,7 +1380,7 @@ x
 
 ```
 [user1@sms ~]$ grep mkpart \
-  /etc/warewulf/filesystem/jetstream-vda.cmds | sed 's/#//g'
+  /etc/warewulf/filesystem/jetstream.cmds | sed 's/#//g'
  mkpart primary ext4 3MiB 515MiB
  mkpart primary linux-swap 515MiB 2663MiB
  mkpart primary ext4 2663MiB 4611MiB
@@ -1395,7 +1395,7 @@ x
 
 ```
 [user1@sms ~]$ echo $(grep mkpart \
-  /etc/warewulf/filesystem/jetstream-vda.cmds | sed 's/#//g')
+  /etc/warewulf/filesystem/jetstream.cmds | sed 's/#//g')
 mkpart primary ext4 3MiB 515MiB mkpart primary linux-swap 
   515MiB 2663MiB mkpart primary ext4 2663MiB 4611MiB mkpart
   primary ext4 4611MiB 100%
@@ -1411,7 +1411,7 @@ x
 ```
 [user1@sms ~]$ sudo ssh c1 parted --script /dev/vda
   $(echo $(grep mkpart
-  /etc/warewulf/filesystem/jetstream-vda.cmds |
+  /etc/warewulf/filesystem/jetstream.cmds |
   sed 's/#//g'))
 ```
 
@@ -1444,9 +1444,9 @@ x
 
 ```
 [user1@sms ~]$ sudo wwsh provision set 'c*' \
-  --filesystem=jetstream-vda
+  --filesystem=jetstream
 [user1@sms ~]$ sudo wwsh provision set 'g*' \
-  --filesystem=jetstream-vda
+  --filesystem=jetstream
 ```
 
 **Do not reboot your nodes yet!**
