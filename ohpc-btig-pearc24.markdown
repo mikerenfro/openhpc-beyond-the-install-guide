@@ -515,7 +515,7 @@ Insert three lines between the lines of `### Anything between here...` and `### 
 ConditionHost=|c*
 ConditionHost=|g*
 ```
-This will only run the service on nodes whose hostnames start with `c` or `g`.
+This will only run the service on nodes whose hostnames start with `c` or `g` (we don't have any `g` nodes here, but this is how you can handle multiple name types).
 
 ::: notes
 x
@@ -1312,10 +1312,10 @@ x
 
 Contents of `jetstream.cmds` (part 2):
 ```
-# mkpart primary ext4 3MiB 515MiB
-# mkpart primary linux-swap 515MiB 2563MiB
-# mkpart primary ext4 2563MiB 4611MiB
-# mkpart primary ext4 4611MiB 100%
+# mkpart primary 3MiB 515MiB
+# mkpart primary 515MiB 2563MiB
+# mkpart primary 2563MiB 4611MiB
+# mkpart primary 4611MiB 100%
 name 2 boot
 name 3 swap
 name 4 root
@@ -1366,10 +1366,10 @@ x
 ```
 [user1@sms ~]$ grep mkpart \
   /etc/warewulf/filesystem/jetstream.cmds
-# mkpart primary ext4 3MiB 515MiB
-# mkpart primary linux-swap 515MiB 2663MiB
-# mkpart primary ext4 2663MiB 4611MiB
-# mkpart primary ext4 4611MiB 100%
+# mkpart primary 3MiB 515MiB
+# mkpart primary 515MiB 2663MiB
+# mkpart primary 2663MiB 4611MiB
+# mkpart primary 4611MiB 100%
 ```
 
 ::: notes
@@ -1381,10 +1381,10 @@ x
 ```
 [user1@sms ~]$ grep mkpart \
   /etc/warewulf/filesystem/jetstream.cmds | sed 's/#//g'
- mkpart primary ext4 3MiB 515MiB
- mkpart primary linux-swap 515MiB 2663MiB
- mkpart primary ext4 2663MiB 4611MiB
- mkpart primary ext4 4611MiB 100%
+ mkpart primary 3MiB 515MiB
+ mkpart primary 515MiB 2663MiB
+ mkpart primary 2663MiB 4611MiB
+ mkpart primary 4611MiB 100%
 ```
 
 ::: notes
@@ -1396,8 +1396,7 @@ x
 ```
 [user1@sms ~]$ echo $(grep mkpart \
   /etc/warewulf/filesystem/jetstream.cmds | sed 's/#//g')
-mkpart primary ext4 3MiB 515MiB mkpart primary linux-swap 
-  515MiB 2663MiB mkpart primary ext4 2663MiB 4611MiB mkpart
+mkpart primary 3MiB 515MiB mkpart primary 515MiB 2663MiB mkpart primary ext4 2663MiB 4611MiB mkpart
   primary ext4 4611MiB 100%
 ```
 
@@ -1426,12 +1425,12 @@ x
 Model: Virtio Block Device (virtblk)
 Disk /dev/vda: 64.4GB
 ...
-Number Start  End    Size   File system    Name    Flags
- 1     1049kB 3146kB 2097kB                EFI     boot, esp
- 2     3146kB 540MB  537MB  ext4           primary
- 3     540MB  2792MB 2252MB linux-swap(v1) primary swap
- 4     2792MB 4835MB 2043MB ext4           primary
- 5     4835MB 64.4GB 59.6GB ext4           primary
+Number Start  End    Size   File system Name    Flags
+ 1     1049kB 3146kB 2097kB             EFI     boot, esp
+ 2     3146kB 540MB  537MB              primary
+ 3     540MB  2688MB 2147MB             primary swap
+ 4     2688MB 4835MB 2147MB             primary
+ 5     4835MB 21.5GB 16.6GB             primary
 ```
 
 Now repeat the previous `sudo ssh NODE parted --script` command for the other node (`c2`).
@@ -1444,8 +1443,6 @@ x
 
 ```
 [user1@sms ~]$ sudo wwsh provision set 'c*' \
-  --filesystem=jetstream
-[user1@sms ~]$ sudo wwsh provision set 'g*' \
   --filesystem=jetstream
 ```
 
@@ -1734,7 +1731,7 @@ x
 [renfro2@sms ~]$ KV=$(sudo ssh gpunode002 "uname -r")
 ```
 
-On a system that's never had NVIDIA drivers installed, the `nvidia-smi` command will return a `Command not found`.
+On a system that's never had NVIDIA drivers installed, the `nvidia-smi` command will return a `command not found`.
 
 
 ::: notes
@@ -1789,7 +1786,7 @@ You'll get up to five harmless warnings from this:
 x
 :::
 
-### Clean up, update the VNFS
+### Clean up, update the VNFS, reboot
 ```
 [renfro2@sms ~]$ sudo rm \
   ${CHROOT}/root/NVIDIA-Linux-x86_64-${NV}.run
@@ -1799,6 +1796,24 @@ x
   egrep -i 'bootstrap|vnfs'
     gpunode002: BOOTSTRAP        = 4.18.0-513.24.1.el8_9.x86_64
     gpunode002: VNFS             = rocky-8-k80
+[renfro2@sms ~]$ sudo ssh gpunode002 reboot
+```
+
+::: notes
+x
+:::
+
+### Wait for the reboot and provision, check versions
+```
+[renfro2@sms ~]$ sudo ssh gpunode002 uptime
+ 15:11:05 up 1 min,  0 users,  load average: 1.56, 0.51, 0.18
+[renfro2@sms ~]$ sudo ssh gpunode002 lspci | grep -i nvidia
+05:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+06:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+84:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+85:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+[renfro2@sms ~]$ sudo ssh gpunode002 nvidia-smi | grep Driver
+| NVIDIA-SMI 470.256.02   Driver Version: 470.256.02   ...
 ```
 
 ::: notes
