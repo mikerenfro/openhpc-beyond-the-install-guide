@@ -71,7 +71,7 @@ Cluster details:
 - Rocky Linux 9 (x86_64)
 - OpenHPC 3.1, Warewulf 3, Slurm 23.11.6
 - 2 non-GPU nodes
-- 2 GPU nodes (currently without GPU drivers, so: expensive non-GPU nodes)
+- 0 GPU nodes (due to technical and licensing conflicts)
 - 1 management node (SMS)
 - 1 unprovisioned login node
 :::
@@ -187,10 +187,14 @@ x
 ```
 [user1@sms ~]$ sudo ssh login
 [root@login ~]# df -h
-Filesystem
-...
-172.16.0.1:/home
-172.16.0.1:/opt/ohpc/pub
+Filesystem                Size  Used Avail Use% Mounted on
+devtmpfs                  2.9G     0  2.9G   0% /dev
+tmpfs                     2.9G  843M  2.1G  29% /
+tmpfs                     2.9G     0  2.9G   0% /dev/shm
+tmpfs                     1.2G  8.5M  1.2G   1% /run
+172.16.0.1:/home           19G   12G  7.4G  61% /home
+172.16.0.1:/opt/ohpc/pub  100G  6.0G   95G   6% /opt/ohpc/pub
+tmpfs                     592M     0  592M   0% /run/user/0
 ```
 
 ::: notes
@@ -1247,28 +1251,7 @@ Number  Start   End     Size    File system     Name  Flags
 x
 :::
 
-### Examine the existing partition scheme (GPU nodes)
-
-Log back into a gpu node as root, check the existing partition table:
-
-```
-[rocky@sms ~]$ sudo ssh g1 parted -l /dev/vda
-parted -l /dev/vda
-Model: Virtio Block Device (virtblk)
-Disk /dev/vda: 64.4GB
-Sector size (logical/physical): 512B/512B
-Partition Table: gpt
-Disk Flags:
-
-Number  Start   End     Size    File system  Name  Flags
- 1      1049kB  3146kB  2097kB               EFI   boot, esp
-```
-
-::: notes
-x
-:::
-
-### Summary of existing partition schemes
+### Summary of existing partition scheme
 
 1. GPT (GUID partition table) method on both node types
 2. Different amounts of disk space on each node type
@@ -1426,7 +1409,7 @@ x
 
 (all of the below goes on one literal line, no backslashes, line breaks, or anything else)
 ```
-[user1@sms ~]$ sudo ssh g2 parted --script /dev/vda
+[user1@sms ~]$ sudo ssh c1 parted --script /dev/vda
   $(echo $(grep mkpart
   /etc/warewulf/filesystem/jetstream-vda.cmds |
   sed 's/#//g'))
@@ -1439,7 +1422,7 @@ x
 ### Check your results
 
 ```
-[user1@sms ~]$ sudo ssh g2 parted -l
+[user1@sms ~]$ sudo ssh c1 parted -l
 Model: Virtio Block Device (virtblk)
 Disk /dev/vda: 64.4GB
 ...
@@ -1451,7 +1434,7 @@ Number Start  End    Size   File system    Name    Flags
  5     4835MB 64.4GB 59.6GB ext4           primary
 ```
 
-Now repeat the previous `sudo ssh NODE parted --script` command for the other nodes (`c1`, `c2`, and `g1`).
+Now repeat the previous `sudo ssh NODE parted --script` command for the other node (`c2`).
 
 ::: notes
 x
@@ -1678,8 +1661,6 @@ NODE                VNFS            BOOTSTRAP         ...
 =========================================================
 c1                  rocky9.4        6.1.97-1.el9.elrep...
 c2                  rocky9.4        6.1.97-1.el9.elrep...
-g1                  rocky9.4        6.1.97-1.el9.elrep...
-g2                  rocky9.4        6.1.97-1.el9.elrep...
 login               rocky9.4        6.1.97-1.el9.elrep...
 ```
 
@@ -1710,12 +1691,10 @@ x
 ### Verify everything came back up
 
 ```
-[user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2],login' uname -r \
+[user1@sms ~]$ sudo pdsh -w 'c[1-2],login' uname -r \
   | sort
 c1: 5.14.0-427.24.1.el9_4.x86_64
 c2: 5.14.0-427.24.1.el9_4.x86_64
-g1: 5.14.0-427.24.1.el9_4.x86_64
-g2: 5.14.0-427.24.1.el9_4.x86_64
 login: 5.14.0-427.24.1.el9_4.x86_64
 [user1@sms ~]$ sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
@@ -1728,24 +1707,51 @@ x
 
 ## Management of GPU drivers
 
-(installing GPU drivers -- mostly rsync'ing a least-common-denominator chroot into a GPU-named chroot, copying the NVIDIA installer into the chroot, mounting /proc and /sys, running the installer, umounting /proc and /sys, and building a second VNFS)
+Unfortunately, we can't do this one as a live in-class exercise.
+
+- Jetstream2 uses NVIDIA GRID to split up GPUs
+- GRID drivers are proprietary and the license doesn't alllow redistribution
+- Typical bare-metal drivers that **can** be redistributed don't work with GRID
+
+So instead, we'll show you how we do this on a bare-metal installation of OpenHPC 2 and Rocky 8. None of the steps change for OpenHPC 3 or Rocky 9.
 
 ::: notes
 x
 :::
 
-### See what we have, download the driver
+### See what we have
 
 ```
-[user1@sms ~]$ sudo ssh g1 lspci | grep -i nvidia
-06:00.0 3D controller: NVIDIA Corporation GA100 [A100 SXM4
-  40GB] (rev a1)
-[user1@sms ~]$ export NV=550.90.07
-[user1@sms ~]$ export B=https://us.download.nvidia.com/tesla/
-[user1@sms ~]$ wget \
-  ${B}/${NV}/NVIDIA-Linux-x86_64-${NV}.run
+[renfro2@sms ~]$ sudo ssh gpunode002 lspci | grep -i nvidia
+05:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+06:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+84:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+85:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+[renfro2@sms ~]$ sudo ssh gpunode002 nvidia-smi | grep Driver
+| NVIDIA-SMI 470.199.02   Driver Version: 470.199.02   ...
+[renfro2@sms ~]$ sudo ssh gpunode002 "uname -r"
+4.18.0-513.24.1.el8_9.x86_64
+[renfro2@sms ~]$ KV=$(sudo ssh gpunode002 "uname -r")
 ```
 
+On a system that's never had NVIDIA drivers installed, the `nvidia-smi` command will return a `Command not found`.
+
+
+::: notes
+x
+:::
+
+### Download the driver
+
+```
+[renfro2@sms ~]$ NV=470.256.02
+[renfro2@sms ~]$ BASEURL=https://us.download.nvidia.com/tesla
+[renfro2@sms ~]$ wget \
+  ${BASEURL}/${NV}/NVIDIA-Linux-x86_64-${NV}.run
+...
+... 'NVIDIA-Linux-x86_64-470.256.02.run' saved ...
+[renfro2@sms ~]$
+```
 
 ::: notes
 x
@@ -1754,13 +1760,11 @@ x
 ### Prepare to install the driver
 
 ```
-[user1@sms ~]$ chmod 755 NVIDIA-Linux-x86_64-${NV}.run
-[user1@sms ~]$ sudo mount -o rw,bind /proc ${CHROOT}/proc
-[user1@sms ~]$ sudo mount -o rw,bind /dev ${CHROOT}/dev
-[user1@sms ~]$ sudo cp NVIDIA-Linux-x86_64-${NV}.run \
-  $CHROOT/root
+[renfro2@sms ~]$ sudo install -o root -g root -m 0755 \
+  NVIDIA-Linux-x86_64-${NV}.run ${CHROOT}/root
+[renfro2@sms ~]$ sudo mount -o rw,bind /proc ${CHROOT}/proc
+[renfro2@sms ~]$ sudo mount -o rw,bind /dev ${CHROOT}/dev
 ```
-
 
 ::: notes
 x
@@ -1769,13 +1773,32 @@ x
 ### Install the driver, clean up, update VNFS
 ```
 [user1@sms ~]$ sudo chroot ${CHROOT} \
-  /root/NVIDIA-Linux-x86_64-${NV}.run \
-  --kernel-name=5.14.0-427.24.1.el9_4.x86_64 \
-  --disable-nouveau --silent --run-nvidia-xconfig --no-drm
-[user1@sms ~]$ sudo rm \
+  /root/NVIDIA-Linux-x86_64-${NV}.run --disable-nouveau \
+  --kernel-name=${KV} --no-drm --run-nvidia-xconfig --silent
+```
+
+You'll get up to five harmless warnings from this:
+
+1. **You do not appear to have an NVIDIA GPU supported by...**.
+2. **One or more modprobe configuration files to disable Nouveau are already present at...**
+3. **The nvidia-drm module will not be installed**
+4. **nvidia-installer was forced to guess the X library path**
+5. **Unable to determine the path to install the libglvnd**
+
+::: notes
+x
+:::
+
+### Clean up, update the VNFS
+```
+[renfro2@sms ~]$ sudo rm \
   ${CHROOT}/root/NVIDIA-Linux-x86_64-${NV}.run
-[user1@sms ~]$ sudo umount ${CHROOT}/proc ${CHROOT}/dev
-[user1@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+[renfro2@sms ~]$ sudo umount ${CHROOT}/proc ${CHROOT}/dev
+[renfro2@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+[renfro2@sms ~]$ wwsh provision print gpunode002 | \
+  egrep -i 'bootstrap|vnfs'
+    gpunode002: BOOTSTRAP        = 4.18.0-513.24.1.el8_9.x86_64
+    gpunode002: VNFS             = rocky-8-k80
 ```
 
 ::: notes
