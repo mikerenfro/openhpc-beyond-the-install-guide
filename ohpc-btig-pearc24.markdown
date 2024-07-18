@@ -1549,7 +1549,7 @@ x
 [user1@sms ~]$ echo modprobe += ext4 | \
   sudo tee -a /etc/warewulf/bootstrap.conf
 [user1@sms ~]$ sudo wwbootstrap $(uname -r)
-[user1@sms ~]$ sudo pdsh -w 'c[1-2],g[1-2]' reboot
+[user1@sms ~]$ sudo pdsh -w 'c[1-2]' reboot
 ```
 
 ::: notes
@@ -1682,7 +1682,7 @@ Are you sure you want to make the following changes to 5
 Yes/No> y
 [user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
   c[1-2]
-[user1@sms ~]$ sudo pdsh -w 'g[1-2],login' reboot
+[user1@sms ~]$ sudo pdsh -w 'c[1-2],login' reboot
 ```
 
 ::: notes
@@ -2012,9 +2012,9 @@ x
 x
 :::
 
-## Example Proposed Policy
+## Example proposed policy
 
-### Example Proposed Policy
+### Example proposed policy
 
 1. Gratis associations will have access to short-length (2 hour) and medium-length (24 hour) partitions.
 2. Member and PAYGO associations will have access to additional long-length partitions (7? days).
@@ -2026,7 +2026,7 @@ x
 x
 :::
 
-### Major Design Concepts
+### Major design concepts
 
 1. PAYGO associations can buy in at a small amount (TBD: how small?)
 2. Member associations can buy in at the amortized cost of a feasible combination of TRES for a few years (TBD: minimum amounts, maximum time limits?)
@@ -2036,9 +2036,9 @@ x
 x
 :::
 
-## Technical Policy Implementation
+## Technical policy implementation
 
-### Technical Policy Implementation
+### Technical policy implementation
 
 Tools available:
 
@@ -2050,7 +2050,7 @@ Tools available:
 x
 :::
 
-### What Users Would See: Batch Jobs
+### What users would see: batch jobs
 
 - Gratis associations (default), no changes to scripts required.
     
@@ -2068,73 +2068,163 @@ Can also set default to something other than gratis for any user, but runs the r
 x
 :::
 
-## Slurm Configuration
+## Slurm and other configuration
 
-### Association Setup: Member Associations
+### Database prerequisites (1/2)
+
+```
+[user1@sms ~]$ sudo mysqladmin create slurm_acct_db
+[user1@sms ~]$ sudo mysql
+MariaDB [(none)]> create user 'slurm'@'localhost' identified
+  by 'some_other_password';
+MariaDB [(none)]> grant all privileges on slurm_acct_db.* to
+  'slurm'@'localhost';
+MariaDB [(none)]> exit
+```
+
+::: notes
+x
+:::
+
+### Database prerequisites (2/2)
+
+```
+[user1@sms ~]$ sudo nano /etc/my.cnf.d/slurmdbd.cnf
+```
+Add the three lines below, save and exit `nano` with Ctrl-X:
+```
+[mysqld]
+innodb_lock_wait_timeout=900
+innodb_buffer_pool_size=4096M
+```
+```
+[user1@sms ~]$ sudo systemctl restart mariadb
+```
+
+::: notes
+x
+:::
+
+### `slurmdbd` configuration
+
+```
+[user1@sms ~]$ sudo cp /etc/slurm/slurmdbd.conf.example \
+  /etc/slurm/slurmdbd.conf
+[user1@sms ~]$ sudo nano /etc/slurm/slurmdbd.conf
+```
+Change `StoragePass=password` to `StoragePass=some_other_password`
+```
+[user1@sms ~]$ sudo systemctl restart slurmdbd
+```
+
+::: notes
+x
+:::
+
+### `slurmctld` configuration
+
+```
+[user1@sms ~]$ sudo nano /etc/slurm/slurm.conf
+```
+Change `AccountingStorageType=accounting_storage/none` to `AccountingStorageType=accounting_storage/slurmdbd`
+```
+[user1@sms ~]$ sudo scontrol reconfigure
+[user1@sms ~]$ sudo sacctmgr add cluster 'cluster'
+```
+
+::: notes
+x
+:::
+
+### Final testing that accounting works now
+
+```
+[user1@sms ~]$ srun hostname
+[user1@sms ~]$ sacct
+JobID           JobName  Partition ...
+------------ ---------- ---------- ...
+...            hostname     normal ...
+```
+You should see at least one JobID with a JobName of `hostname` and a State of `COMPLETED`.
+
+::: notes
+x
+:::
+
+### Association setup: member associations
 
 Setting up a funded account (which can be assigned a fairshare):
 
 ```
-sacctmgr add account member1 cluster=its \
-    Description="Member1 Description" FairShare=N
+[user1@sms ~]$ sudo sacctmgr add account member1 \
+    cluster=cluster Description="Member1 Description" \
+    FairShare=N
 ```
 
-Adding/removing a user to/from the funded account:
-
+Adding a user to the funded account:
 ```
-sacctmgr add user renfro account=member1 # for all partitions
-sacctmgr add user renfro account=member1 \
-    partition=gpu # for partition-specific fairshare
-sacctmgr remove user where user=renfro and account=member1
+[user1@sms ~]$ sudo sacctmgr add user user1 account=member1
+```
+
+Removing a user from an account:
+```
+[user1@sms ~]$ sudo sacctmgr remove user where user=user1 \
+  and account=member1
 ```
 
 ::: notes
 x
 :::
 
-### Association Setup: Member Associations
+### Association setup: member associations
 
 Modifying funded account fairshare:
 
 ```
-sacctmgr modify account member1 set FairShare=N
+[user1@sms ~]$ sudo sacctmgr modify account member1 set \
+  FairShare=N
 ```
 
-Modifying funded account fairshare on specific partitions (e.g., if the entity funded GPU nodes)
+Partition-specific fairshare (e.g., if the entity funded GPU nodes)
 
 ```
-sacctmgr modify user renfro set FairShare=N \
-    where account=member1 partition=gpu
+[user1@sms ~]$ sudo sacctmgr add user user1 account=member1 \
+  partition=gpu
+[user1@sms ~]$ sudo sacctmgr modify user user1 set \
+  FairShare=N where account=member1 partition=gpu
 ```
 
 ::: notes
 x
 :::
 
-### Association Setup: PAYGO Associations
+### Association setup: PAYGO associations
 
 Setting up the umbrella PAYGO account (which can be assigned a fairshare):
 
 ```
-sacctmgr add account paygo cluster=its \
-    Description="PAYGO Projects" FairShare=N
+[user1@sms ~]$ sacctmgr add account paygo cluster=cluster \
+  Description="PAYGO Projects" FairShare=N
 ```
 
 Setting up a project-specific PAYGO account and QOS (in this case, with a quota of 1000 CPU-minutes):
 
 ```
-sacctmgr add account paygo-project1 cluster=its \
-    Description="PAYGO Project 1" parent=paygo
-sacctmgr add qos paygo-project1 flags=NoDecay,DenyOnLimit
-sacctmgr modify qos paygo-project1 set grptresmins=cpu=1000
-sacctmgr modify account name=paygo set qos+=paygo-project1
+[user1@sms ~]$ sacctmgr add account paygo-project1 \
+  cluster=cluster Description="PAYGO Project 1" parent=paygo
+[user1@sms ~]$ sacctmgr add qos paygo-project1 \
+  flags=NoDecay,DenyOnLimit
+[user1@sms ~]$ sacctmgr modify qos paygo-project1 set \
+  grptresmins=cpu=1000
+[user1@sms ~]$ sacctmgr modify account name=paygo set \
+  qos+=paygo-project1
 ```
 
 ::: notes
 x
 :::
 
-### Association Setup: PAYGO Associations
+### Association setup: PAYGO associations
 
 Modifying umbrella PAYGO account fairshare:
 
@@ -2153,19 +2243,20 @@ scontrol -o show assoc_mgr qos=paygo-project1 | \
 x
 :::
 
-### Association Setup: PAYGO Associations
+### Association setup: PAYGO associations
 
 Adding/removing a user to/from a project-specific PAYGO QOS:
 
 ```
-sacctmgr modify user renfro set qos+=paygo-project1
-sacctmgr modify user renfro set qos-=paygo-project1
+sacctmgr modify user user1 set qos+=paygo-project1
+sacctmgr modify user user1 set qos-=paygo-project1
 ```
 
 Removing a project-specific PAYGO account and QOS:
 
 ```
-sacctmgr modify account name=paygo-project1 set qos-=paygo-project1
+sacctmgr modify account name=paygo-project1 set \
+  qos-=paygo-project1
 sacctmgr remove qos paygo-project1
 sacctmgr remove account paygo-project1
 ```
@@ -2174,12 +2265,12 @@ sacctmgr remove account paygo-project1
 x
 :::
 
-### Association Setup: Gratis Entities
+### Association setup: gratis entities
 
 Setting up the umbrella gratis account (which can be assigned a fairshare):
 
 ```
-sacctmgr add account gratis cluster=its \
+sacctmgr add account gratis cluster=cluster \
     Description="Gratis Usage" FairShare=N
 ```
 
@@ -2199,23 +2290,20 @@ sacctmgr modify account gratis set FairShare=N
 x
 :::
 
-### Partition Setup
+### Partition setup
 
 In slurm.conf, all partitions will have a common configuration of:
 
 ```
-PartitionName=DEFAULT AllowGroups=ALL AllowQos=ALL Default=NO
-  DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
-  LLN=NO MinNodes=1 OverSubscribe=NO OverTimeLimit=0
-  PreemptMode=OFF PriorityJobFactor=1 ReqResv=NO RootOnly=NO
-  Shared=NO State=UP
+PartitionName=DEFAULT ExclusiveUser=NO LLN=NO MinNodes=1
+  PriorityJobFactor=1
 ```
 
 ::: notes
 x
 :::
 
-### Short Partitions
+### Short partitions
 
 :::{.columns}
 :::{.column width=50%}
@@ -2230,7 +2318,7 @@ DefaultTime=02:00:00
 MaxTime=02:00:00
 AllowAccounts=ALL
 PriorityTier=3
-Nodes=node[001-040]
+Nodes=c[1-2]
 ```
 
 :::
@@ -2245,7 +2333,7 @@ DefaultTime=00:30:00
 MaxTime=00:30:00
 AllowAccounts=ALL 
 PriorityTier=2
-Nodes=node[001-040]
+Nodes=c[1-2]
 ```
 
 :::
@@ -2255,93 +2343,7 @@ Nodes=node[001-040]
 x
 :::
 
-### Short Partitions
-
-:::{.columns}
-:::{.column width=50%}
-
-#### gpu-interactive
-
-```
-PartitionName=gpu-interactive
-MaxNodes=2
-DefMemPerCPU=2000
-DefaultTime=02:00:00
-MaxTime=02:00:00
-AllowAccounts=ALL 
-PriorityTier=3
-MaxCPUsPerNode=16 QoS=gpu
-Nodes=gpunode[001-004]
-```
-
-:::
-:::{.column width=50%}
-
-#### gpu-debug
-
-```
-PartitionName=gpu-debug
-DefMemPerCPU=2000
-DefaultTime=00:30:00
-MaxTime=00:30:00
-AllowAccounts=ALL 
-PriorityTier=2
-MaxCPUsPerNode=16 QoS=gpu
-Nodes=gpunode[001-004]
-```
-
-:::
-:::
-
-::: notes
-x
-:::
-
-### Short Partitions
-
-:::{.columns}
-:::{.column width=50%}
-
-#### any-interactive
-
-```
-PartitionName=any-interactive
-MaxNodes=4
-DefMemPerCPU=2000
-DefaultTime=02:00:00
-MaxTime=02:00:00
-AllowAccounts=ALL
-PriorityTier=3
-MaxCPUsPerNode=12
-Nodes=node[001-040],
-    gpunode[001-004]
-```
-
-:::
-:::{.column width=50%}
-
-#### any-debug
-
-```
-PartitionName=any-debug
-DefMemPerCPU=2000
-DefaultTime=00:30:00
-MaxTime=00:30:00
-AllowAccounts=ALL
-PriorityTier=2
-MaxCPUsPerNode=12
-Nodes=node[001-040],
-    gpunode[001-004]
-```
-
-:::
-:::
-
-::: notes
-x
-:::
-
-### Medium Partitions
+### Medium partitions
 
 :::{.columns}
 :::{.column width=50%}
@@ -2351,31 +2353,17 @@ x
 ```
 PartitionName=batch
 Default=YES
-MaxNodes=4
+MaxNodes=2
 DefMemPerCPU=2000
 DefaultTime=06:00:00
 MaxTime=2-00:00:00
 AllowAccounts=ALL
 PriorityTier=1
-Nodes=node[001-040]
+Nodes=c[1-2]
 ```
 
 :::
 :::{.column width=50%}
-
-#### gpu
-
-```
-PartitionName=gpu
-MaxNodes=2
-DefMemPerCPU=2000
-DefaultTime=06:00:00
-MaxTime=1-00:00:00
-AllowAccounts=ALL
-PriorityTier=1
-MaxCPUsPerNode=16 QoS=gpu
-Nodes=gpunode[001-004]
-```
 
 :::
 :::
@@ -2384,52 +2372,7 @@ Nodes=gpunode[001-004]
 x
 :::
 
-### Medium Partitions
-
-:::{.columns}
-:::{.column width=50%}
-
-#### bigmem
-
-```
-PartitionName=bigmem
-MaxNodes=3
-DefMemPerCPU=12000
-MaxMemPerNode=318000
-DefaultTime=06:00:00
-MaxTime=1-00:00:00
-AllowAccounts=ALL
-PriorityTier=1
-MaxCPUsPerNode=12
-Nodes=gpunode[001-003]
-```
-
-:::
-:::{.column width=50%}
-
-#### hugemem
-
-```
-PartitionName=hugemem
-MaxNodes=1
-DefMemPerCPU=28000
-MaxMemPerNode=830000
-DefaultTime=06:00:00
-MaxTime=1-00:00:00
-AllowAccounts=ALL
-PriorityTier=1
-MaxCPUsPerNode=12
-Nodes=gpunode004
-```
-
-:::
-:::
-
-::: notes
-x
-:::
-
-### Long Partitions
+### Long partitions
 
 :::{.columns}
 :::{.column width=50%}
@@ -2450,19 +2393,6 @@ Nodes=node[001-040]
 :::
 :::{.column width=50%}
 
-#### gpu-long
-
-```
-PartitionName=gpu-long
-MaxNodes=4
-DefaultTime=1-00:00:00
-MaxTime=3-00:00:00
-DenyAccounts=gratis
-PriorityTier=2
-MaxCPUsPerNode=16 QoS=gpu
-Nodes=gpunode[001-004]
-```
-
 :::
 :::
 
@@ -2470,61 +2400,10 @@ Nodes=gpunode[001-004]
 x
 :::
 
-### Long Partitions
+## Demonstration of Slurm policies in use
 
-:::{.columns}
-:::{.column width=50%}
-
-#### bigmem-long
-
-```
-PartitionName=bigmem-long
-MaxNodes=3
-DefMemPerCPU=12000
-MaxMemPerNode=318000
-DefaultTime=06:00:00
-MaxTime=7-00:00:00
-DenyAccounts=gratis
-PriorityTier=2
-MaxCPUsPerNode=12
-Nodes=gpunode[001-003]
-```
-
-:::
-:::{.column width=50%}
-
-#### hugemem-long
-
-```
-PartitionName=hugemem-long
-MaxNodes=1
-DefMemPerCPU=28000
-MaxMemPerNode=830000
-DefaultTime=06:00:00
-MaxTime=7-00:00:00
-DenyAccounts=gratis
-PriorityTier=2
-MaxCPUsPerNode=12
-Nodes=gpunode004
-```
-
-:::
-:::
+### Demonstration of Slurm policies in use
 
 ::: notes
 x
 :::
-
-## Additional Limits
-
-### Additional Limits
-
-Limit GPU consumption to 8 (includes running and pending, further jobs get blocked until jobs complete or are cancelled).
-
-```
-sacctmgr modify user renfro set grptres=gres/gpu=8
-```
-::: notes
-x
-:::
-
