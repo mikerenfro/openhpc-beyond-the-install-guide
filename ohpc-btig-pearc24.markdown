@@ -1549,7 +1549,8 @@ x
 [user1@sms ~]$ echo modprobe += ext4 | \
   sudo tee -a /etc/warewulf/bootstrap.conf
 [user1@sms ~]$ sudo wwbootstrap $(uname -r)
-[user1@sms ~]$ sudo pdsh -w 'c[1-2]' reboot
+[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
+  c[1-2]
 ```
 
 ::: notes
@@ -1674,7 +1675,7 @@ x
 ```
 [user1@sms ~]$ sudo wwsh provision set '*' \
   --bootstrap=5.14.0-427.24.1.el9_4.x86_64
-Are you sure you want to make the following changes to 5
+Are you sure you want to make the following changes to 3
   node(s):
 
      SET: BOOTSTRAP            = 5.14.0-427.24.1.el9_4.x86_64
@@ -1682,7 +1683,7 @@ Are you sure you want to make the following changes to 5
 Yes/No> y
 [user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
   c[1-2]
-[user1@sms ~]$ sudo pdsh -w 'c[1-2],login' reboot
+[user1@sms ~]$ sudo pdsh -w 'login' reboot
 ```
 
 ::: notes
