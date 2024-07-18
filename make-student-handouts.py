@@ -22,8 +22,8 @@ login_external_ip = f"10.38.51.{cluster_number+128}"
 login_mac = y['login_mac']
 c1_mac = y['compute_nodes'][0]['mac']
 c2_mac = y['compute_nodes'][1]['mac']
-g1_mac = y['gpu_nodes'][0]['mac']
-g2_mac = y['gpu_nodes'][1]['mac']
+#g1_mac = y['gpu_nodes'][0]['mac']
+#g2_mac = y['gpu_nodes'][1]['mac']
 
 # Title of second page
 d.paragraphs[8].text = d.paragraphs[8].text.replace('N', str(cluster_number))
@@ -51,9 +51,9 @@ d.tables[5].rows[1].cells[1].text = c1_mac
 d.tables[5].rows[1].cells[1].paragraphs[0].style = msc
 d.tables[5].rows[2].cells[1].text = c2_mac
 d.tables[5].rows[2].cells[1].paragraphs[0].style = msc
-d.tables[5].rows[3].cells[1].text = g1_mac
-d.tables[5].rows[3].cells[1].paragraphs[0].style = msc
-d.tables[5].rows[4].cells[1].text = g2_mac
-d.tables[5].rows[4].cells[1].paragraphs[0].style = msc
+#d.tables[5].rows[3].cells[1].text = g1_mac
+#d.tables[5].rows[3].cells[1].paragraphs[0].style = msc
+#d.tables[5].rows[4].cells[1].text = g2_mac
+#d.tables[5].rows[4].cells[1].paragraphs[0].style = msc
 
 d.save(f"/vagrant/student-{cluster_number}.docx")
