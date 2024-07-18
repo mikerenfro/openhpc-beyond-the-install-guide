@@ -1960,8 +1960,571 @@ x
 
 # Configuring Slurm policies
 
-Can adapt a lot of Mike's CaRCC Emerging Centers talk from a couple years ago for this. Fair share, hard limits on resource consumption, QOSes for limiting number of GPU jobs or similar.
+## Introduction
+
+- Largely adapted from some design work done in 2020
+- Not all of these have been implemented at TN Tech
+- The technical implementation is accurate, though
 
 ::: notes
 x
 :::
+
+### Terminology (from Slurm scheduler)
+
+- User: an individual student, faculty, or staff with HPC access
+- Account: analagous to a bank account or billable entity
+- Partition: queue for running jobs
+- Cluster: for now, the entire campus HPC environment.
+- Association: a combination of cluster, user, account, and optionally partition
+- TRES: trackable resource such as a CPU, GPU, or memory
+- QOS: quality of service, can be used to adjust priority or enforce TRES limits
+
+::: notes
+x
+:::
+
+### Association Types
+
+- Member: any entity with sufficient funding for hardware purchases
+- PAYGO: any entity with sufficient funding for purchasing resource time (pay as you go)
+- Gratis: any unfunded entity
+
+An HPC user could submit jobs under any of these types:
+they could be on a well-funded project (member),
+part of another project or class that bought resource time (PAYGO),
+and submit personal, unfunded jobs (gratis).
+
+::: notes
+x
+:::
+
+### Policy Goals
+
+1. All HPC users will have the ability to run jobs. No user is refused access due to lack of funding.
+2. Gratis associations will be limited in the amount of TRES that can be used and priority to start jobs.
+3. The **lower bound** of resource share used by an association will correspond to its share of funding (if everyone submits the maximum number of jobs).
+3. The **expected value** of resource share used by an association will exceed its share of funding (if others submit less than the maximum number of jobs).
+4. Member and PAYGO associations will have fewer limits on TRES times and amounts, and will get higher priority to start jobs.
+5. Member and PAYGO associations will be able to decide how to distribute their share of resources among their users.
+
+::: notes
+x
+:::
+
+## Example Proposed Policy
+
+### Example Proposed Policy
+
+1. Gratis associations will have access to short-length (2 hour) and medium-length (24 hour) partitions.
+2. Member and PAYGO associations will have access to additional long-length partitions (7? days).
+3. Gratis associations will get a small fairshare and limited amounts of TRES.
+4. Member associations will get a fairshare proportional to their level of funding.
+5. PAYGO associations will get the remaining fairshare, but will have a hard limit on their TRES usage.
+
+::: notes
+x
+:::
+
+### Major Design Concepts
+
+1. PAYGO associations can buy in at a small amount (TBD: how small?)
+2. Member associations can buy in at the amortized cost of a feasible combination of TRES for a few years (TBD: minimum amounts, maximum time limits?)
+3. Member associations can buy in for funding entire nodes (TBD: minimum amount >$5k, maximum time limits?)
+
+::: notes
+x
+:::
+
+## Technical Policy Implementation
+
+### Technical Policy Implementation
+
+Tools available:
+
+1. Fairshare levels applied to each association
+2. QOS to enforce limits on PAYGO associations
+3. Access to partitions can be allowed or denied on a per-account basis
+
+::: notes
+x
+:::
+
+### What Users Would See: Batch Jobs
+
+- Gratis associations (default), no changes to scripts required.
+    
+- Member associations, add to job script:
+
+        #SBATCH --account=member1
+
+- PAYGO associations, add to job script:
+
+        #SBATCH --account=paygo-project1 --qos=paygo-project1
+
+Can also set default to something other than gratis for any user, but runs the risk of using fairshare or PAYGO budget for unrelated jobs.
+
+::: notes
+x
+:::
+
+## Slurm Configuration
+
+### Association Setup: Member Associations
+
+Setting up a funded account (which can be assigned a fairshare):
+
+```
+sacctmgr add account member1 cluster=its \
+    Description="Member1 Description" FairShare=N
+```
+
+Adding/removing a user to/from the funded account:
+
+```
+sacctmgr add user renfro account=member1 # for all partitions
+sacctmgr add user renfro account=member1 \
+    partition=gpu # for partition-specific fairshare
+sacctmgr remove user where user=renfro and account=member1
+```
+
+::: notes
+x
+:::
+
+### Association Setup: Member Associations
+
+Modifying funded account fairshare:
+
+```
+sacctmgr modify account member1 set FairShare=N
+```
+
+Modifying funded account fairshare on specific partitions (e.g., if the entity funded GPU nodes)
+
+```
+sacctmgr modify user renfro set FairShare=N \
+    where account=member1 partition=gpu
+```
+
+::: notes
+x
+:::
+
+### Association Setup: PAYGO Associations
+
+Setting up the umbrella PAYGO account (which can be assigned a fairshare):
+
+```
+sacctmgr add account paygo cluster=its \
+    Description="PAYGO Projects" FairShare=N
+```
+
+Setting up a project-specific PAYGO account and QOS (in this case, with a quota of 1000 CPU-minutes):
+
+```
+sacctmgr add account paygo-project1 cluster=its \
+    Description="PAYGO Project 1" parent=paygo
+sacctmgr add qos paygo-project1 flags=NoDecay,DenyOnLimit
+sacctmgr modify qos paygo-project1 set grptresmins=cpu=1000
+sacctmgr modify account name=paygo set qos+=paygo-project1
+```
+
+::: notes
+x
+:::
+
+### Association Setup: PAYGO Associations
+
+Modifying umbrella PAYGO account fairshare:
+
+```
+sacctmgr modify account paygo set FairShare=N
+```
+
+Checking usage of a project-specific PAYGO QOS (UsageRaw is in CPU-seconds):
+
+```
+scontrol -o show assoc_mgr qos=paygo-project1 | \
+    grep QOS=paygo-project1 | egrep -o 'UsageRaw=[0-9.]*'
+```
+
+::: notes
+x
+:::
+
+### Association Setup: PAYGO Associations
+
+Adding/removing a user to/from a project-specific PAYGO QOS:
+
+```
+sacctmgr modify user renfro set qos+=paygo-project1
+sacctmgr modify user renfro set qos-=paygo-project1
+```
+
+Removing a project-specific PAYGO account and QOS:
+
+```
+sacctmgr modify account name=paygo-project1 set qos-=paygo-project1
+sacctmgr remove qos paygo-project1
+sacctmgr remove account paygo-project1
+```
+
+::: notes
+x
+:::
+
+### Association Setup: Gratis Entities
+
+Setting up the umbrella gratis account (which can be assigned a fairshare):
+
+```
+sacctmgr add account gratis cluster=its \
+    Description="Gratis Usage" FairShare=N
+```
+
+Make sure new users end up using the gratis account by default:
+
+```
+sacctmgr add user username DefaultAccount=gratis
+```
+
+Modifying gratis account fairshare:
+
+```
+sacctmgr modify account gratis set FairShare=N
+```
+
+::: notes
+x
+:::
+
+### Partition Setup
+
+In slurm.conf, all partitions will have a common configuration of:
+
+```
+PartitionName=DEFAULT AllowGroups=ALL AllowQos=ALL Default=NO
+  DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+  LLN=NO MinNodes=1 OverSubscribe=NO OverTimeLimit=0
+  PreemptMode=OFF PriorityJobFactor=1 ReqResv=NO RootOnly=NO
+  Shared=NO State=UP
+```
+
+::: notes
+x
+:::
+
+### Short Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### interactive
+
+```
+PartitionName=interactive
+MaxNodes=4
+DefMemPerCPU=2000
+DefaultTime=02:00:00
+MaxTime=02:00:00
+AllowAccounts=ALL
+PriorityTier=3
+Nodes=node[001-040]
+```
+
+:::
+:::{.column width=50%}
+
+#### debug
+
+```
+PartitionName=debug
+DefMemPerCPU=2000
+DefaultTime=00:30:00
+MaxTime=00:30:00
+AllowAccounts=ALL 
+PriorityTier=2
+Nodes=node[001-040]
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+### Short Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### gpu-interactive
+
+```
+PartitionName=gpu-interactive
+MaxNodes=2
+DefMemPerCPU=2000
+DefaultTime=02:00:00
+MaxTime=02:00:00
+AllowAccounts=ALL 
+PriorityTier=3
+MaxCPUsPerNode=16 QoS=gpu
+Nodes=gpunode[001-004]
+```
+
+:::
+:::{.column width=50%}
+
+#### gpu-debug
+
+```
+PartitionName=gpu-debug
+DefMemPerCPU=2000
+DefaultTime=00:30:00
+MaxTime=00:30:00
+AllowAccounts=ALL 
+PriorityTier=2
+MaxCPUsPerNode=16 QoS=gpu
+Nodes=gpunode[001-004]
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+### Short Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### any-interactive
+
+```
+PartitionName=any-interactive
+MaxNodes=4
+DefMemPerCPU=2000
+DefaultTime=02:00:00
+MaxTime=02:00:00
+AllowAccounts=ALL
+PriorityTier=3
+MaxCPUsPerNode=12
+Nodes=node[001-040],
+    gpunode[001-004]
+```
+
+:::
+:::{.column width=50%}
+
+#### any-debug
+
+```
+PartitionName=any-debug
+DefMemPerCPU=2000
+DefaultTime=00:30:00
+MaxTime=00:30:00
+AllowAccounts=ALL
+PriorityTier=2
+MaxCPUsPerNode=12
+Nodes=node[001-040],
+    gpunode[001-004]
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+### Medium Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### batch
+
+```
+PartitionName=batch
+Default=YES
+MaxNodes=4
+DefMemPerCPU=2000
+DefaultTime=06:00:00
+MaxTime=2-00:00:00
+AllowAccounts=ALL
+PriorityTier=1
+Nodes=node[001-040]
+```
+
+:::
+:::{.column width=50%}
+
+#### gpu
+
+```
+PartitionName=gpu
+MaxNodes=2
+DefMemPerCPU=2000
+DefaultTime=06:00:00
+MaxTime=1-00:00:00
+AllowAccounts=ALL
+PriorityTier=1
+MaxCPUsPerNode=16 QoS=gpu
+Nodes=gpunode[001-004]
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+### Medium Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### bigmem
+
+```
+PartitionName=bigmem
+MaxNodes=3
+DefMemPerCPU=12000
+MaxMemPerNode=318000
+DefaultTime=06:00:00
+MaxTime=1-00:00:00
+AllowAccounts=ALL
+PriorityTier=1
+MaxCPUsPerNode=12
+Nodes=gpunode[001-003]
+```
+
+:::
+:::{.column width=50%}
+
+#### hugemem
+
+```
+PartitionName=hugemem
+MaxNodes=1
+DefMemPerCPU=28000
+MaxMemPerNode=830000
+DefaultTime=06:00:00
+MaxTime=1-00:00:00
+AllowAccounts=ALL
+PriorityTier=1
+MaxCPUsPerNode=12
+Nodes=gpunode004
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+### Long Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### long
+
+```
+PartitionName=long
+MaxNodes=40
+DefMemPerCPU=2000
+DefaultTime=1-00:00:00
+MaxTime=7-00:00:00
+DenyAccounts=gratis
+PriorityTier=2
+Nodes=node[001-040]
+```
+
+:::
+:::{.column width=50%}
+
+#### gpu-long
+
+```
+PartitionName=gpu-long
+MaxNodes=4
+DefaultTime=1-00:00:00
+MaxTime=3-00:00:00
+DenyAccounts=gratis
+PriorityTier=2
+MaxCPUsPerNode=16 QoS=gpu
+Nodes=gpunode[001-004]
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+### Long Partitions
+
+:::{.columns}
+:::{.column width=50%}
+
+#### bigmem-long
+
+```
+PartitionName=bigmem-long
+MaxNodes=3
+DefMemPerCPU=12000
+MaxMemPerNode=318000
+DefaultTime=06:00:00
+MaxTime=7-00:00:00
+DenyAccounts=gratis
+PriorityTier=2
+MaxCPUsPerNode=12
+Nodes=gpunode[001-003]
+```
+
+:::
+:::{.column width=50%}
+
+#### hugemem-long
+
+```
+PartitionName=hugemem-long
+MaxNodes=1
+DefMemPerCPU=28000
+MaxMemPerNode=830000
+DefaultTime=06:00:00
+MaxTime=7-00:00:00
+DenyAccounts=gratis
+PriorityTier=2
+MaxCPUsPerNode=12
+Nodes=gpunode004
+```
+
+:::
+:::
+
+::: notes
+x
+:::
+
+## Additional Limits
+
+### Additional Limits
+
+Limit GPU consumption to 8 (includes running and pending, further jobs get blocked until jobs complete or are cancelled).
+
+```
+sacctmgr modify user renfro set grptres=gres/gpu=8
+```
+::: notes
+x
+:::
+
