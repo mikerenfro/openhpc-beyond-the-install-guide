@@ -32,7 +32,7 @@ OpenHPC
 
 Jetstream2
 
-: especially Jeremy Fischer, Mike Lowe, and Julian Pistorius. Jetstream2 has a tutorial at the same time as this one. Please stay here.
+: especially Jeremy Fischer, Daniel Havert, Mike Lowe, and Julian Pistorius. Jetstream2 has a tutorial at the same time as this one. Please stay here.
 
 NSF CC*
 
@@ -92,7 +92,7 @@ We used the OpenHPC automatic installation script from Appendix A with a few var
 4. Enabled `slurmd` and `munge` in `CHROOT`.
 5. Added `nano` and `yum` to `CHROOT`.
 6. Removed a redundant `ReturnToService` line from `/etc/slurm/slurm.conf`.
-7. Stored all compute/GPU nodes' SSH host keys in `/etc/ssh/ssh_known_hosts`.
+7. Stored all compute nodes' SSH host keys in `/etc/ssh/ssh_known_hosts`.
 8. Globally set an environment variable `CHROOT` to `/opt/ohpc/admin/images/rocky9.4`.
 
 ::: notes
@@ -105,9 +105,9 @@ x
 
 1. A login node that's practically identical to a compute node (except for where it needs to be different)
 2. A slightly more secured SMS and login node
-3. GPU drivers on the GPU nodes
-4. Using node-local storage for the OS and/or scratch
-5. De-coupling the SMS and the compute nodes (e.g., independent kernel versions)
+3. Using node-local storage for the OS and/or scratch
+4. De-coupling the SMS and the compute nodes (e.g., independent kernel versions)
+5. GPU driver installation (simulated/recorded, not live)
 6. Easier management of node differences (GPU or not, diskless/single-disk/multi-disk, Infiniband or not, etc.)
 7. Slurm configuration to match some common policy goals (fair share, resource limits, etc.)
 
@@ -1231,7 +1231,7 @@ x
 x
 :::
 
-### Examine the existing partition scheme (non-GPU nodes)
+### Examine the existing partition scheme
 
 Log back into a compute node as root, check the existing partition table:
 
@@ -1575,6 +1575,10 @@ Swap:   2047     0  2047
 
 Note that the `used` memory column has dropped by nearly 90% from before.
 
+::: notes
+x
+:::
+
 ### Final result on a compute node (part 2)
 
 Consume 5 GiB of space in /tmp (we only used 1 GiB previously), then allocate 5 GB for an array in memory:
@@ -1846,7 +1850,109 @@ x
 - Puppet manifests,
 - etc.
 
-Mike's used Ansible as part of the Basic Cluster project; Tim's `ohpc-jetstream2` repository does the same. TN Tech uses Python scripts for their Warewulf management.
+Ansible is pretty popular: ACCESS' Basic Cluster project, Tim Middelkoop's `ohpc-jetstream2` repository, StackHPC. Compute Canada's Magic Castle uses Puppet. TN Tech uses Python scripts for their Warewulf management.
+
+::: notes
+x
+:::
+
+### Excerpts from Python scripts (installing GPU drivers)
+
+```
+# These could be saved into a common settings file
+CHROOTS = {
+  None:   ['/opt/ohpc/admin/images/rocky-cpu', None],
+  'a100': ['/opt/ohpc/admin/images/rocky-a100', '550.90.07'],
+  'k80':  ['/opt/ohpc/admin/images/rocky-k80', '470.256.02'],
+  }
+NV_BASEURL = 'https://us.download.nvidia.com/tesla'
+KERNEL_VER = '4.18.0-513.5.1.el8_9.x86_64'
+NV_OPTS = " ".join([f"--disable-nouveau",
+                    f"--kernel-name={KERNEL_VER}",
+                    f"--no-drm",
+                    f"--run-nvidia-xconfig",
+                    f"--silent",
+                    ])
+```
+
+::: notes
+x
+:::
+
+### Excerpts from Python scripts (installing GPU drivers)
+
+```
+# This could be a function or a script to install GPU drivers
+import os
+for gpu in CHROOTS.keys():
+  if gpu == None:
+    continue
+  chroot, version = CHROOTS[gpu]
+  driver = f"NVIDIA-Linux-x86_64-{version}.run"
+  os.system(f"curl -sLO {NV_BASEURL}/{version}/{driver}")
+  os.system(f"install -o root -g root {driver} {chroot}/root/")
+  # to be continued...
+```
+
+::: notes
+x
+:::
+
+### Excerpts from Python scripts (installing GPU drivers)
+
+```
+  # continued...
+  for mnt in ['proc', 'dev']:
+    os.system(f"mount -o rw,bind /{mnt} {chroot}/{mnt}")
+  os.system(f"chroot {chroot} /root/{driver} {driver_opts}")
+  for mnt in ['proc', 'dev']:
+    os.system(f"umount {chroot}/{mnt}")
+  os.remove(f"{chroot}/root/{driver}")
+```
+
+::: notes
+x
+:::
+
+### Excerpts from Python scripts (managing node properties)
+
+```
+NODES = [
+  { 'hostname': 'gpunode012',
+    'eth_dev': 'eth2', 'eth_ip': '149.149.248.204/25',
+    'eth_dev_mac': 'B0:7B:25:DE:68:26',
+    'ib_dev': 'ib0', 'ib_ip': '172.16.1.204/23',
+    'stateful': '2-drive', 'gpu': 'a100', },
+  { 'hostname': 'login', 'role': 'login',
+    'eth_dev': 'eth0', 'eth_ip': '149.149.248.135/25',
+    'eth_dev_mac': '00:50:56:81:50:72',
+    'extra_interfaces': { 'eth1': '10.10.25.126/21' }, },
+  ]
+file_list = ["dynamic_hosts", "passwd", "group", "shadow",
+             "munge.key",]
+```
+
+::: notes
+x
+:::
+
+### Excerpts from Python scripts (managing node properties)
+
+```
+for node in NODES:
+  fileadd_list = []
+  fileadd_list.append(f"network.{node['eth_dev']}")
+  if 'extra_interfaces' in node:
+    for dev, ip in node.extra_interfaces.items():
+      ip_mask = ipaddress.ip_interface(ip)
+      fileadd_list.append(f"ifcfg-{dev}.ww")
+      os.system(f"wwsh -y node set {node['hostname']}"
+                f"-D {dev} --ipaddr={ip_mask.ip}"
+                f"--netmask={ip_mask.netmask}")
+  os.system(f"wwsh -y provision set {node['hostname']}"
+            f"--files={','.join(file_list)}"
+            f"--fileadd={','.join(fileadd_list)}")
+```
 
 ::: notes
 x
