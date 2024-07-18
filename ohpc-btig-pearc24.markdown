@@ -226,7 +226,7 @@ So there's no entry for login in the SMS `slurm.conf`. To fix that:
 ::: incremental
 
 1. Run `slurmd -C`{.bash} on the login node to capture its correct CPU specifications. Copy that line to your laptop's clipboard.
-2. On the SMS, run `nano /etc/slurm/slurm/slurm.conf` and make a new line of all the `slurmd -C` output from the previous step (pasted from your laptop clipboard).
+2. On the SMS, run `nano /etc/slurm/slurm.conf` and make a new line of all the `slurmd -C` output from the previous step (pasted from your laptop clipboard).
 3. Save and exit `nano` by pressing `Ctrl-X` and then Enter.
 4. Reload the new Slurm configuration everywhere (well, everywhere functional) with `sudo scontrol reconfigure` on the SMS.
 5. ssh back to the login node and restart slurmd, since it wasn't able to respond to the `scontrol reconfigure` from the previous step (`sudo ssh login systemctl restart slurmd` on the SMS).
