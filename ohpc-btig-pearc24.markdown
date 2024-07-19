@@ -2127,7 +2127,17 @@ x
 ```
 [user1@sms ~]$ sudo nano /etc/slurm/slurm.conf
 ```
-Change `AccountingStorageType=accounting_storage/none` to `AccountingStorageType=accounting_storage/slurmdbd`
+Change
+```
+AccountingStorageEnforce=0
+AccountingStorageType=accounting_storage/none
+```
+to
+```
+AccountingStorageEnforce=qos,limits,safe
+AccountingStorageType=accounting_storage/slurmdbd
+```
+
 ```
 [user1@sms ~]$ sudo scontrol reconfigure
 [user1@sms ~]$ sudo sacctmgr add cluster 'cluster'
@@ -2159,7 +2169,7 @@ Setting up a funded account (which can be assigned a fairshare):
 ```
 [user1@sms ~]$ sudo sacctmgr add account member1 \
     cluster=cluster Description="Member1 Description" \
-    FairShare=N
+    FairShare=10
 ```
 
 Adding a user to the funded account:
@@ -2204,20 +2214,20 @@ x
 Setting up the umbrella PAYGO account (which can be assigned a fairshare):
 
 ```
-[user1@sms ~]$ sacctmgr add account paygo cluster=cluster \
-  Description="PAYGO Projects" FairShare=N
+[user1@sms ~]$ sudo sacctmgr add account paygo \
+  cluster=cluster Description="PAYGO Projects" FairShare=1000
 ```
 
-Setting up a project-specific PAYGO account and QOS (in this case, with a quota of 1000 CPU-minutes):
+Setting up a project-specific PAYGO account and QOS (in this case, with a quota of 10 CPU-minutes):
 
 ```
-[user1@sms ~]$ sacctmgr add account paygo-project1 \
+[user1@sms ~]$ sudo sacctmgr add account paygo-project1 \
   cluster=cluster Description="PAYGO Project 1" parent=paygo
-[user1@sms ~]$ sacctmgr add qos paygo-project1 \
+[user1@sms ~]$ sudo sacctmgr add qos paygo-project1 \
   flags=NoDecay,DenyOnLimit
-[user1@sms ~]$ sacctmgr modify qos paygo-project1 set \
-  grptresmins=cpu=1000
-[user1@sms ~]$ sacctmgr modify account name=paygo set \
+[user1@sms ~]$ sudo sacctmgr modify qos paygo-project1 set \
+  grptresmins=cpu=10
+[user1@sms ~]$ sudo sacctmgr modify account name=paygo set \
   qos+=paygo-project1
 ```
 
@@ -2249,8 +2259,8 @@ x
 Adding/removing a user to/from a project-specific PAYGO QOS:
 
 ```
-sacctmgr modify user user1 set qos+=paygo-project1
-sacctmgr modify user user1 set qos-=paygo-project1
+sacctmgr modify user user2 set qos+=paygo-project1
+sacctmgr modify user user2 set qos-=paygo-project1
 ```
 
 Removing a project-specific PAYGO account and QOS:
@@ -2296,106 +2306,89 @@ x
 In slurm.conf, all partitions will have a common configuration of:
 
 ```
-PartitionName=DEFAULT ExclusiveUser=NO LLN=NO MinNodes=1
+PartitionName=DEFAULT DefMemPerCPU=2000 ExclusiveUser=NO
+  LLN=NO MaxNodes=2 MinNodes=1 Nodes=c[1-2]
   PriorityJobFactor=1
 ```
+(all of these go on one line in `/etc/slurm/slurm.conf`)
+
+```
+[user1@sms ~]$ sudo nano /etc/slurm/slurm.conf
+```
+to comment out the `PartitionName=normal` line and add the one above at the end of the file.
 
 ::: notes
 x
 :::
 
-### Short partitions
+### Partition examples
 
 :::{.columns}
-:::{.column width=50%}
+:::{.column width=33%}
 
-#### interactive
+#### Short
 
 ```
-PartitionName=interactive
-MaxNodes=4
-DefMemPerCPU=2000
+PartitionName=short
 DefaultTime=02:00:00
 MaxTime=02:00:00
 AllowAccounts=ALL
 PriorityTier=3
-Nodes=c[1-2]
 ```
 
 :::
-:::{.column width=50%}
+:::{.column width=33%}
 
-#### debug
-
-```
-PartitionName=debug
-DefMemPerCPU=2000
-DefaultTime=00:30:00
-MaxTime=00:30:00
-AllowAccounts=ALL 
-PriorityTier=2
-Nodes=c[1-2]
-```
-
-:::
-:::
-
-::: notes
-x
-:::
-
-### Medium partitions
-
-:::{.columns}
-:::{.column width=50%}
-
-#### batch
+#### Medium
 
 ```
-PartitionName=batch
+PartitionName=medium
 Default=YES
-MaxNodes=2
-DefMemPerCPU=2000
 DefaultTime=06:00:00
-MaxTime=2-00:00:00
+MaxTime=48:00:00
 AllowAccounts=ALL
-PriorityTier=1
-Nodes=c[1-2]
+PriorityTier=2
 ```
 
 :::
-:::{.column width=50%}
+:::{.column width=33%}
 
-:::
-:::
-
-::: notes
-x
-:::
-
-### Long partitions
-
-:::{.columns}
-:::{.column width=50%}
-
-#### long
+#### Long
 
 ```
 PartitionName=long
-MaxNodes=40
-DefMemPerCPU=2000
-DefaultTime=1-00:00:00
-MaxTime=7-00:00:00
+DefaultTime=24:00:00
+MaxTime=168:00:00
 DenyAccounts=gratis
-PriorityTier=2
-Nodes=node[001-040]
+PriorityTier=1
 ```
 
 :::
-:::{.column width=50%}
+:::
 
+Add each of these (each partition on its own single line) to the end of `/etc/slurm/slurm.conf`.
+
+::: notes
+x
 :::
-:::
+
+### Priority Setup
+
+Use Fairshare as the most important factor, discount usage from 3+ days ago
+```
+PriorityDecayHalfLife=3-0
+PriorityMaxAge=1-0
+PriorityType=priority/multifactor
+PriorityWeightAge=1000
+PriorityWeightFairshare=100000
+PriorityWeightJobSize=1000
+PriorityWeightPartition=10000
+```
+Save and exit `nano` with Ctrl-X.
+
+```
+[user1@sms ~]$ sudo scontrol reconfigure
+```
 
 ::: notes
 x
@@ -2405,6 +2398,39 @@ x
 
 ### Demonstration of Slurm policies in use
 
+Using default gratis account:
+```
+[user1@sms ~]$ sbatch sleep15.sh
+Submitted batch job 9
+[user1@sms ~]$ squeue
+JOBID PARTITION     NAME  USER ST TIME NODES NODELIST(REASON)
+    9    medium sleep15. user1  R 0:02     1 c1
+[user1@sms ~]$ sbatch --partition=long sleep15.sh
+sbatch: error: Batch job submission failed: Invalid account
+  or account/partition combination specified
+```
+Using non-gratis account:
+```
+[user1@sms ~]$ sbatch --partition=long --account=member1 \
+  sleep15.sh
+Submitted batch job 10
+```
+
 ::: notes
 x
 :::
+
+### Other notes
+
+Backfill scheduling
+```
+SchedulerParameters=bf_window=10080,bf_resolution=504,
+  bf_max_job_user=80,bf_continue,default_queue_depth=200
+SchedulerType=sched/backfill
+```
+
+- `bf_window` set to the maximum job time (in minutes),
+- `bf_resolution` set to 5% of `bf_window`,
+- `bf_max_job_user` to set upper limit on number of jobs per user to start per backfill cycle,
+- `bf_continue` to resume backfill from where we left off rather than restart,
+- `default_queue_depth` to set number of jobs to attempt scheduling when a job completes.
