@@ -1,7 +1,9 @@
 import sys
+import uuid
+import yaml
 
 import docx
-import yaml
+import qrcode
 
 d = docx.Document('/vagrant/obtig-user-instructions.docx')
 msl = d.tables[1].rows[0].cells[1].paragraphs[0].style  # monospaced left
@@ -27,6 +29,16 @@ c2_mac = y['compute_nodes'][1]['mac']
 
 # Title of second page
 d.paragraphs[8].text = d.paragraphs[8].text.replace('N', str(cluster_number))
+
+# QR code
+filename = f"student-{cluster_number}-{uuid.uuid4()}"
+qr = qrcode.QRCode()
+qr.add_data(f'https://www.hpc.tntech.edu/obtig/{filename}.pdf')
+qr.make(fit=True)
+img = qr.make_image()
+img.save("qr.png")
+qr_run = d.tables[0].rows[1].cells[1].paragraphs[0].add_run()
+qr_run.add_picture('qr.png', width=docx.shared.Inches(1.25))
 
 # Credentials table
 d.tables[1].rows[1].cells[1].text = password
@@ -56,4 +68,4 @@ d.tables[5].rows[2].cells[1].paragraphs[0].style = msc
 #d.tables[5].rows[4].cells[1].text = g2_mac
 #d.tables[5].rows[4].cells[1].paragraphs[0].style = msc
 
-d.save(f"/vagrant/student-{cluster_number}.docx")
+d.save(f"/vagrant/{filename}.docx")
