@@ -1,3 +1,4 @@
+import os
 import sys
 import uuid
 import yaml
@@ -69,3 +70,4 @@ d.tables[5].rows[2].cells[1].paragraphs[0].style = msc
 #d.tables[5].rows[4].cells[1].paragraphs[0].style = msc
 
 d.save(f"/vagrant/{filename}.docx")
+os.remove('qr.png')
