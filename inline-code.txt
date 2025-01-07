@@ -1,0 +1,286 @@
+s-nail
+MailProg
+slurm.conf
+user1
+user2
+sudo
+CHROOT
+/opt/ohpc/admin/images/rocky9.3
+/opt/ohpc/admin/images/rocky9.4
+slurmd
+munge
+CHROOT
+nano
+yum
+CHROOT
+ReturnToService
+/etc/slurm/slurm.conf
+/etc/ssh/ssh_known_hosts
+CHROOT
+/opt/ohpc/admin/images/rocky9.4
+login
+eth0
+login
+eth1
+eth0
+login
+aa:bb:cc:dd:ee:ff
+user1
+user2
+sudo
+__
+login
+next-server
+filename
+http://SMS_IP/WW/ipxe/cfg/${client_mac}
+--hwaddr
+--ipaddr
+--bootstrap
+--netdev
+--ipaddr
+--hwaddr
+--hwaddr
+--vnfs
+--files
+systemctl status slurmd
+fatal: Unable to determine this slurmd's NodeName
+slurm.conf
+slurmd -C
+nano /etc/slurm/slurm.conf
+slurmd -C
+nano
+Ctrl-X
+sudo scontrol reconfigure
+scontrol reconfigure
+sudo ssh login systemctl restart slurmd
+sinfo
+slurmd
+slurmd
+slurmd
+slurm.conf
+slurm.conf
+root
+slurmd
+systemctl stop slurmd
+root
+/etc/slurm/slurm.conf
+nano /etc/slurm/slurm.conf
+nano
+Ctrl-X
+/etc/slurm/slurm.conf
+sinfo
+slurmd
+/etc/slurm/slurm.conf
+slurm.conf
+munge.key
+wwsh provision
+wwsh provision
+c1
+wwsh provision
+login
+wwsh provision
+c1
+login
+diff
+wwsh provision
+wwsh provision
+=
+c1:
+diff
+proprint c1
+proprint login
+diff
+<()
+slurm.conf
+FILES
+--fileadd
+slurmd
+slurmd
+systemd
+root
+### Anything between here...
+### Lines below this comment...
+c
+g
+g
+slurmd
+slurmd
+systemctl start slurmd
+systemctl status slurmd
+systemctl edit
+/etc/systemd/system/slurmd.service.d/override.conf
+CHROOT
+slurmd
+sinfo
+slurmd
+sinfo
+c1
+down
+Access denied
+pam_slurm.so
+/etc/pam.d/sshd
+diff -u /etc/pam.d/sshd ${CHROOT}/etc/pam.d/sshd
+pam_slurm.so
+/etc/pam.d/ssh
+ssh user1@login
+/etc/pam.d/sshd
+slurm.conf
+--fileadd
+/var/log/secure
+fail2ban
+fail2ban
+/var/log/secure
+firewalld
+firewalld
+firewalld
+netstat
+localhost
+sshd
+init
+rsyslogd
+sshd
+firewalld
+ssh
+fail2ban
+yum
+firewalld
+fail2ban
+sshd.local
+sudo nano ${CHROOT}/etc/fail2ban/jail.d/sshd.local
+fail2ban
+fail2ban
+fail2ban
+fail2ban
+fail2ban
+firewalld
+fail2ban
+/var/log/secure
+/etc/rsyslog.conf
+#authpriv.* /var/log/secure
+rsyslog.conf
+*.conf
+/etc/rsyslog.d
+fail2ban
+firewalld
+3/NOTIMPLEMENTED
+sysctl -a | grep modules_disabled
+3/NOTIMPLEMENTED
+wwbootstrap $(uname -r)
+echo "drivers += updates/kernel/" >> /etc/warewulf/bootstrap.conf
+lsmod
+nf
+find /lib/modules/$(uname -r) -name '*nf*'
+kernel/net
+kernel/net/ipv4/netfilter
+kernel/net/ipv6/netfilter
+kernel/net/netfilter
+3/NOTIMPLEMENTED
+kernel/net
+/etc/warewulf/bootstrap.conf
+3/NOTIMPLEMENTED
+wwbootstrap
+3/NOTIMPLEMENTED
+fail2ban
+evilmike
+evilmike
+c1
+down
+c1
+sudo scontrol update node=c1 state=resume
+scontrol reboot
+RebootProgram
+/etc/slurm/slurm.conf
+RebootProgram
+RebootProgram
+scontrol reboot
+scontrol reboot ASAP
+DRAIN
+scontrol reboot ASAP nextstate=RESUME
+nextstate=DOWN
+DOWN
+c1
+/dev/vda
+parted
+/boot
+/
+/tmp
+/etc/warewulf/filesystem/examples
+.cmds
+parted
+mkfs
+/etc/fstab
+select
+mkpart
+name
+parted
+jetstream.cmds
+/dev/vda1
+/dev/vda
+/boot
+/
+/tmp
+jetstream.cmds
+mkpart
+jetstream.cmds
+nano
+Ctrl-X
+parted
+--script
+jetstream.cmds
+mkpart
+#
+mkpart
+sudo ssh NODE parted --script
+c2
+wwsh provision set NODE --preshell=1
+--postshell=1
+dmesg | grep vd
+postshell
+/dev/vd
+lsmod
+virtio_blk
+modprobe virtio_blk
+dmesg | grep vd
+postshell
+echo modprobe += virtio_blk | sudo tee -a /etc/warewulf/bootstrap.conf
+sudo wwbootstrap KERNEL_VERSION
+parted -l
+parted -l
+parted -l
+mkdir /mnt ; mount -t auto /dev/sdb4 /mnt
+mount: mounting /dev/vdb4 as /mnt failed: No such file or directory
+/mnt
+/dev/sdb4
+ls -l
+/tmp
+/tmp
+ext4
+modprobe ext4
+postshell
+mount
+echo modprobe += ext4 | sudo tee -a /etc/warewulf/bootstrap.conf
+sudo wwbootstrap KERNEL_VERSION
+wwbootstrap
+used
+Killed
+/tmp
+wwmkchroot
+wwbootstrap $(uname -r)
+wwbootstrap --help
+${CHROOT}
+nvidia-smi
+command not found
+wwsh node
+wwsh provision
+systemd
+ConditionHost
+ohpc-jetstream2
+nano
+slurmdbd
+StoragePass=password
+StoragePass=some_other_password
+slurmctld
+AccountingStorageType=accounting_storage/none
+AccountingStorageType=accounting_storage/slurmdbd
+hostname
+COMPLETED

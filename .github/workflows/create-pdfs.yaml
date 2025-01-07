@@ -1,0 +1,71 @@
+name: 'Create .pdf file'
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - pearc24
+    paths:
+      - '*.markdown'
+      - metadata.yaml
+      - settings.yaml
+      - template.beamer
+      - TechSignatureSealBlack.pdf
+      - beamerthemeCookeville.sty
+      - figures/**
+      - .github/workflows/create-pdfs.yaml
+  pull_request:
+
+permissions:
+  contents: write
+  pull-requests: read
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  list-markdown:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: create file list
+        id: files_list
+        run: |
+          echo "files=$(ls *.markdown | sed 's/.markdown//g' | jq -R | jq -s -c)" > $GITHUB_OUTPUT
+    outputs:
+      files_list: ${{ steps.files_list.outputs.files }}
+
+  make-pdfs:
+    needs: list-markdown
+    if: ${{ always() }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        file: ${{ fromJSON(needs.list-markdown.outputs.files_list) }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build slides .pdf
+        uses: docker://pandoc/latex:3.2
+        with:
+          args: --defaults=settings.yaml --listings -o ${{matrix.file}}-slides.pdf ${{matrix.file}}.markdown
+
+      - name: Build handouts .pdf
+        uses: docker://pandoc/latex:3.2
+        with:
+          args: --defaults=settings.yaml --listings -V handout -o ${{matrix.file}}-handouts.pdf ${{matrix.file}}.markdown
+
+      - name: Build notes .pdf
+        uses: docker://pandoc/latex:3.2
+        with:
+          args: --defaults=settings.yaml --listings --metadata=beameroption="show only notes" -o ${{matrix.file}}-notes.pdf ${{matrix.file}}.markdown
+
+      - run: git pull
+
+      - name: Upload .pdf
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Upload from GitHub Actions

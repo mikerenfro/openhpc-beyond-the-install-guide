@@ -11,4 +11,9 @@
 /openstack-tofu/ssh_key.tf
 /openstack-tofu/terraform.tfstate
 /openstack-tofu/terraform.tfstate.backup
+/*-local.pdf
 /ipxe/ipxe
+/student-*.docx
+/student-*.pdf
+/~$*.docx
+/qr.png

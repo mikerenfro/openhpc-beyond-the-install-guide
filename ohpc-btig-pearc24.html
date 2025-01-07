@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Sharon Colson" />
+  <meta name="author" content="Jim Moroney" />
+  <meta name="author" content="Mike Renfro" />
+  <meta name="dcterms.date" content="2024-07-22" />
+  <title>OpenHPC: Beyond the Install Guide</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">OpenHPC: Beyond the Install Guide</h1>
+<p class="subtitle">for PEARC24</p>
+<p class="author">Sharon Colson</p>
+<p class="author">Jim Moroney</p>
+<p class="author">Mike Renfro</p>
+<p class="date">2024-07-22</p>
+</header>
+<h1 id="introduction">Introduction</h1>
+<h2 id="acknowledgments-and-shameless-plugs">Acknowledgments and
+shameless plugs</h2>
+<h3 id="acknowledgments-and-shameless-plugs-1">Acknowledgments and
+shameless plugs</h3>
+<div class="incremental">
+<dl class="incremental">
+<dt>OpenHPC</dt>
+<dd>
+<p>especially Tim Middelkoop (Internet2) and Chris Simmons
+(Massachusetts Green High Performance Computing Center). They have a BOF
+at 1:30 Wednesday. You should go to it.</p>
+</dd>
+<dt>Jetstream2</dt>
+<dd>
+<p>especially Jeremy Fischer, Daniel Havert, Mike Lowe, and Julian
+Pistorius. Jetstream2 has a tutorial at the same time as this one.
+Please stay here.</p>
+</dd>
+<dt>NSF CC*</dt>
+<dd>
+<p>for the equipment that led to some of the lessons we’re sharing today
+(award #2127188).</p>
+</dd>
+<dt>ACCESS</dt>
+<dd>
+<p>current maintainers of the project formerly known as the XSEDE
+Compatible Basic Cluster.</p>
+</dd>
+</dl>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="where-were-starting-from">Where we’re starting from</h2>
+<h3 id="where-were-starting-from-1">Where we’re starting from</h3>
+<div class="columns" data-align="center">
+<div class="column" style="width:50%;">
+<figure>
+<img src="figures/two-networks.png" style="width:90.0%"
+alt="Two example HPC networks for the tutorial" />
+<figcaption aria-hidden="true">Two example HPC networks for the
+tutorial</figcaption>
+</figure>
+</div><div class="column" style="width:50%;">
+<p>You:</p>
+<ul>
+<li>have installed OpenHPC before</li>
+<li>have been issued a (basically) out-of-the-box OpenHPC cluster for
+this tutorial</li>
+</ul>
+<p>Cluster details:</p>
+<ul>
+<li>Rocky Linux 9 (x86_64)</li>
+<li>OpenHPC 3.1, Warewulf 3, Slurm 23.11.6</li>
+<li>2 non-GPU nodes</li>
+<li>0 GPU nodes (due to technical and licensing conflicts)</li>
+<li>1 management node (SMS)</li>
+<li>1 unprovisioned login node</li>
+</ul>
+</div>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="where-were-starting-from-2">Where we’re starting from</h3>
+<p>We used the OpenHPC automatic installation script from Appendix A
+with a few variations:</p>
+<ol type="1">
+<li>Installed <code>s-nail</code> to have a valid <code>MailProg</code>
+for <code>slurm.conf</code>.</li>
+<li>Created <code>user1</code> and <code>user2</code> accounts with
+password-less <code>sudo</code> privileges.</li>
+<li>Changed <code>CHROOT</code> from
+<code>/opt/ohpc/admin/images/rocky9.3</code> to
+<code>/opt/ohpc/admin/images/rocky9.4</code>.</li>
+<li>Enabled <code>slurmd</code> and <code>munge</code> in
+<code>CHROOT</code>.</li>
+<li>Added <code>nano</code> and <code>yum</code> to
+<code>CHROOT</code>.</li>
+<li>Removed a redundant <code>ReturnToService</code> line from
+<code>/etc/slurm/slurm.conf</code>.</li>
+<li>Stored all compute nodes’ SSH host keys in
+<code>/etc/ssh/ssh_known_hosts</code>.</li>
+<li>Globally set an environment variable <code>CHROOT</code> to
+<code>/opt/ohpc/admin/images/rocky9.4</code>.</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="where-were-going">Where we’re going</h2>
+<h3 id="where-were-going-1">Where we’re going</h3>
+<ol type="1">
+<li>A login node that’s practically identical to a compute node (except
+for where it needs to be different)</li>
+<li>A slightly more secured SMS and login node</li>
+<li>Using node-local storage for the OS and/or scratch</li>
+<li>De-coupling the SMS and the compute nodes (e.g., independent kernel
+versions)</li>
+<li>GPU driver installation (simulated/recorded, not live)</li>
+<li>Easier management of node differences (GPU or not,
+diskless/single-disk/multi-disk, Infiniband or not, etc.)</li>
+<li>Slurm configuration to match some common policy goals (fair share,
+resource limits, etc.)</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h1 id="making-better-infrastructure-nodes">Making better infrastructure
+nodes</h1>
+<h2 id="a-dedicated-login-node">A dedicated login node</h2>
+<h3 id="assumptions">Assumptions</h3>
+<ol type="1">
+<li>We have a VM named <code>login</code>, with no operating system
+installed.</li>
+<li>The <code>eth0</code> network interface for <code>login</code> is
+attached to the internal network, and <code>eth1</code> is attached to
+the external network.</li>
+<li>The <code>eth0</code> MAC address for <code>login</code> is
+known—check the <strong>Login server</strong> section of your handout
+for that. It’s of the format <code>aa:bb:cc:dd:ee:ff</code>.</li>
+<li>We’re logged into the SMS as <code>user1</code> or
+<code>user2</code> that has <code>sudo</code> privileges.</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="create-a-new-login-node">Create a new login node</h3>
+<p>Working from section 3.9.3 of the install guide:</p>
+<pre><code>[user1@sms ~]$ sudo wwsh -y node new login --netdev eth0 \
+    --ipaddr=172.16.0.2 --hwaddr=__:__:__:__:__:__
+[user1@sms ~]$ sudo wwsh -y provision set login \
+    --vnfs=rocky9.4 --bootstrap=$(uname -r) \
+    --files=dynamic_hosts,passwd,group,shadow,munge.key,network</code></pre>
+<p><strong>Make sure to replace the <code>__</code> with the characters
+from your login node’s MAC address!</strong></p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="whatd-we-just-do">What’d we just do?</h3>
+<p>Ever since <code>login</code> was powered on, it’s been stuck in a
+loop trying to PXE boot. What’s the usual PXE boot process for a client
+in an OpenHPC environment?</p>
+<div class="incremental">
+<ol class="incremental" type="1">
+<li>The client network card tries to get an IP address from a DHCP
+server (the SMS) by broadcasting its MAC address.</li>
+<li>The SMS responds with the client’s IP and network info, a
+<code>next-server</code> IP (the SMS again), and a <code>filename</code>
+option (a bootloader from the iPXE project).</li>
+<li>The network card gets the bootloader over TFTP and executes it.</li>
+<li>iPXE makes a second DHCP request and this time, it gets a URL (by
+default, <code>http://SMS_IP/WW/ipxe/cfg/${client_mac}</code>) for an
+iPXE config file.</li>
+<li>The config file contains the URL of a Linux kernel and initial
+ramdisk, plus multiple kernel parameters available after initial bootup
+for getting the node’s full operating system contents.</li>
+</ol>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="whatd-we-just-do-1">What’d we just do?</h3>
+<div class="incremental">
+<ol class="incremental" type="1">
+<li>The node name, <code>--hwaddr</code>, and <code>--ipaddr</code>
+parameters go into the SMS DHCP server settings.</li>
+<li>The <code>--bootstrap</code> parameter defines the kernel and
+ramdisk for the iPXE configuration.</li>
+<li>The node name, <code>--netdev</code>, <code>--ipaddr</code>,
+<code>--hwaddr</code> parameters all go into kernel parameters
+accessible from the provisioning software.</li>
+<li>During the initial bootup, the <code>--hwaddr</code> parameter is
+passed to a CGI script on the SMS to identify the correct VNFS for the
+provisioning software to download (set by the <code>--vnfs</code>
+parameter).</li>
+<li>After downloading the VNFS, the provisioning software will also
+download files from the SMS set by the <code>--files</code>
+parameter.</li>
+</ol>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="did-it-work-so-far-so-good.">Did it work? So far, so good.</h3>
+<pre><code>[user1@sms ~]$ sudo ssh login
+[root@login ~]# df -h
+Filesystem                Size  Used Avail Use% Mounted on
+devtmpfs                  2.9G     0  2.9G   0% /dev
+tmpfs                     2.9G  843M  2.1G  29% /
+tmpfs                     2.9G     0  2.9G   0% /dev/shm
+tmpfs                     1.2G  8.5M  1.2G   1% /run
+172.16.0.1:/home           19G   12G  7.4G  61% /home
+172.16.0.1:/opt/ohpc/pub  100G  6.0G   95G   6% /opt/ohpc/pub
+tmpfs                     592M     0  592M   0% /run/user/0</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="did-it-work-not-entirely.">Did it work? Not entirely.</h3>
+<pre><code>[root@login ~]# sinfo
+sinfo: error: resolve_ctls_from_dns_srv: res_nsearch error:
+  Unknown host
+sinfo: error: fetch_config: DNS SRV lookup failed
+sinfo: error: _establish_config_source: failed to fetch config
+sinfo: fatal: Could not establish a configuration source</code></pre>
+<p><code>systemctl status slurmd</code> is more helpful, with
+<code>fatal: Unable to determine this slurmd's NodeName</code>. So how
+do we fix this one?</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="option-1-take-the-error-message-literally">Option 1: take the
+error message literally</h3>
+<p>So there’s no entry for login in the SMS <code>slurm.conf</code>. To
+fix that:</p>
+<div class="incremental">
+<ol class="incremental" type="1">
+<li>Run <code
+class="sourceCode bash"><span class="ex">slurmd</span> <span class="at">-C</span></code>
+on the login node to capture its correct CPU specifications. Copy that
+line to your laptop’s clipboard.</li>
+<li>On the SMS, run <code>nano /etc/slurm/slurm.conf</code> and make a
+new line of all the <code>slurmd -C</code> output from the previous step
+(pasted from your laptop clipboard).</li>
+<li>Save and exit <code>nano</code> by pressing <code>Ctrl-X</code> and
+then Enter.</li>
+<li>Reload the new Slurm configuration everywhere (well, everywhere
+functional) with <code>sudo scontrol reconfigure</code> on the SMS.</li>
+<li>ssh back to the login node and restart slurmd, since it wasn’t able
+to respond to the <code>scontrol reconfigure</code> from the previous
+step (<code>sudo ssh login systemctl restart slurmd</code> on the
+SMS).</li>
+</ol>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="option-1-take-the-error-message-literally-1">Option 1: take the
+error message literally</h3>
+<p>Now an <code>sinfo</code> should work on the login node:</p>
+<pre><code>[root@login ~]# sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c[1-2]</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="option-2-why-are-we-running-slurmd-anyway">Option 2: why are we
+running <code>slurmd</code> anyway?</h3>
+<p>The <code>slurmd</code> service is really only needed on systems that
+will be running computational jobs, and the login node is not in that
+category.</p>
+<p>Running <code>slurmd</code> like the other nodes means the login node
+can get all its information from the SMS, but we can do the same thing
+with a very short customized <code>slurm.conf</code> with two lines from
+the SMS’ <code>slurm.conf</code>:</p>
+<pre><code>ClusterName=cluster
+SlurmctldHost=sms</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="interactive-test">Interactive test</h3>
+<div class="columns" data-align="top">
+<div class="column" style="width:60%;">
+<ol type="1">
+<li>On the login node as <code>root</code>, temporarily stop the
+<code>slurmd</code> service with <code>systemctl stop slurmd</code></li>
+<li>On the login node as <code>root</code>, edit
+<code>/etc/slurm/slurm.conf</code> with
+<code>nano /etc/slurm/slurm.conf</code></li>
+<li>Add the two lines to the right, save and exit <code>nano</code> by
+pressing <code>Ctrl-X</code> and then Enter.</li>
+</ol>
+</div><div class="column" style="width:40%;">
+<h4
+id="etcslurmslurm.conf-on-login-node"><code>/etc/slurm/slurm.conf</code>
+on login node</h4>
+<pre><code>ClusterName=cluster
+SlurmctldHost=sms</code></pre>
+</div>
+</div>
+<p>Verify that <code>sinfo</code> still works without
+<code>slurmd</code> and with the custom
+<code>/etc/slurm/slurm.conf</code>.</p>
+<pre><code>[root@login ~]# sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c[1-2]</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-permanent-changes-from-the-sms">Make permanent changes from
+the SMS</h3>
+<p>Let’s reproduce the changes we made interactively on the login node
+in the Warewulf settings on the SMS.</p>
+<p>For the customized <code>slurm.conf</code> file, we can keep a copy
+of it on the SMS and add it to the Warewulf file store.</p>
+<p>We’ve done that previously for files like the shared
+<code>munge.key</code> for all cluster nodes (see section 3.8.5 of the
+OpenHPC install guide).</p>
+<p>We also need to make sure that file is part of the login node’s
+provisioning settings.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-permanent-changes-from-the-sms-1">Make permanent changes
+from the SMS</h3>
+<p>On the SMS:</p>
+<pre><code>[user1@sms ~]$ sudo scp login:/etc/slurm/slurm.conf \
+  /etc/slurm/slurm.conf.login
+slurm.conf                        100%   40    57.7KB/s   00:00
+[user1@sms ~]$ sudo wwsh -y file import \
+  /etc/slurm/slurm.conf.login --name=slurm.conf.login \
+  --path=/etc/slurm/slurm.conf</code></pre>
+<p>Now the file is available, but we need to ensure the login node gets
+it. That’s handled with <code>wwsh provision</code>.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="a-quick-look-at-wwsh-provision">A quick look at
+<code>wwsh provision</code></h3>
+<p>What are the provisioning settings for compute node
+<code>c1</code>?</p>
+<pre><code>[user1@sms ~]$ wwsh provision print c1
+#### c1 ######################################################
+ c1: MASTER           = UNDEF
+ c1: BOOTSTRAP        = 6.1.96-1.el9.elrepo.x86_64
+ c1: VNFS             = rocky9.4
+ c1: VALIDATE         = FALSE
+ c1: FILES            = dynamic_hosts,group,munge.key,network,
+   passwd,shadow
+...
+ c1: KARGS            = &quot;net.ifnames=0 biosdevname=0 quiet&quot;
+ c1: BOOTLOCAL        = FALSE</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="a-quick-look-at-wwsh-provision-1">A quick look at
+<code>wwsh provision</code></h3>
+<p>What are the provisioning settings for node <code>login</code>?</p>
+<pre><code>[user1@sms ~]$ wwsh provision print login
+#### login ###################################################
+ login: MASTER        = UNDEF
+ login: BOOTSTRAP     = 6.1.96-1.el9.elrepo.x86_64
+ login: VNFS          = rocky9.4
+ login: VALIDATE      = FALSE
+ login: FILES         = dynamic_hosts,group,munge.key,network,
+   passwd,shadow
+...
+ login: KARGS         = &quot;net.ifnames=0 biosdevname=0 quiet&quot;
+ login: BOOTLOCAL     = FALSE</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="a-quick-look-at-wwsh-provision-2">A quick look at
+<code>wwsh provision</code></h3>
+<p>The provisioning settings for <code>c1</code> and <code>login</code>
+are identical, but there’s a lot to read in there to be certain about
+it.</p>
+<p>We could run the two outputs through <code>diff</code>, but every
+line contains the node name, so <strong>no lines are literally
+identical</strong>.</p>
+<p>Let’s simplify and filter the <code>wwsh provision</code> output to
+make it easier to compare.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="filter-the-wwsh-provision-output">Filter the
+<code>wwsh provision</code> output</h3>
+<div class="incremental">
+<ul class="incremental">
+<li><p>I only care about the lines containing <code>=</code> signs,
+so</p>
+<pre><code>wwsh provision print c1 | grep =</code></pre>
+<p>is a start.</p></li>
+<li><p>Now all the lines are prefixed with <code>c1:</code>, and I want
+to keep everything after that, so</p>
+<pre><code>wwsh provision print c1 | grep = | cut -d: -f2-</code></pre>
+<p>will take care of that.</p></li>
+</ul>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="filtered-result">Filtered result</h3>
+<pre><code>wwsh provision print c1 | grep = | cut -d: -f2-</code></pre>
+<pre><code> MASTER           = UNDEF
+ BOOTSTRAP        = 6.1.96-1.el9.elrepo.x86_64
+ VNFS             = rocky9.4
+ VALIDATE         = FALSE
+ FILES            = dynamic_hosts,group,munge.key,network,
+   passwd,shadow
+...
+ KARGS            = &quot;net.ifnames=0 biosdevname=0 quiet&quot;
+ BOOTLOCAL        = FALSE</code></pre>
+<p>Much more useful.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-a-function-for-this">Make a function for this</h3>
+<p>We may be typing that command pipeline a lot, so let’s make a shell
+function to cut down on typing:</p>
+<pre><code>[user1@sms ~]$ function proprint() { \
+  wwsh provision print $@ | grep = | cut -d: -f2- ; }
+[user1@sms ~]$ proprint c1
+ MASTER           = UNDEF
+ BOOTSTRAP        = 6.1.96-1.el9.elrepo.x86_64
+...</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="diff-the-outputs"><code>diff</code> the outputs</h3>
+<p>We could redirect a <code>proprint c1</code> and a
+<code>proprint login</code> to files and <code>diff</code> the resulting
+files, or we can use the shell’s <code>&lt;()</code> operator to treat
+command output as a file:</p>
+<pre><code>[user1@sms ~]$ diff -u &lt;(proprint c1) &lt;(proprint login)
+[user1@sms ~]$</code></pre>
+<p>Either of those shows there are zero provisioning differences between
+a compute node and the login node.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="add-the-custom-slurm.conf-to-the-login-node">Add the custom
+<code>slurm.conf</code> to the login node</h3>
+<p>Add a file to login’s <code>FILES</code> property with:</p>
+<pre><code>[user1@sms ~]$ sudo wwsh -y provision set login \
+  --fileadd=slurm.conf.login</code></pre>
+<p>(refer to section 3.9.3 of the install guide for previous examples of
+<code>--fileadd</code>).</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="check-for-provisioning-differences">Check for provisioning
+differences</h3>
+<pre><code>[user1@sms ~]$ diff -u &lt;(proprint c1) &lt;(proprint login)
+--- /dev/fd/63  2024-07-06 11:11:07.682959677 -0400
++++ /dev/fd/62  2024-07-06 11:11:07.683959681 -0400
+@@ -2,7 +2,7 @@
+  BOOTSTRAP        = 6.1.96-1.el9.elrepo.x86_64
+  VNFS             = rocky9.4
+  VALIDATE         = FALSE
+- FILES            = dynamic_hosts,group,munge.key,network,
+  passwd,shadow
++ FILES            = dynamic_hosts,group,munge.key,network,
+  passwd,shadow,slurm.conf.login
+  PRESHELL         = FALSE
+  POSTSHELL        = FALSE
+  POSTNETDOWN      = FALSE</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="ensure-slurmd-doesnt-run-on-the-login-node">Ensure
+<code>slurmd</code> doesn’t run on the login node</h3>
+<p>To disable the <code>slurmd</code> service on just the login node, we
+can take advantage of conditions in the <code>systemd</code> service
+file. Back on the login node as <code>root</code>:</p>
+<pre><code>[user1@sms ~]$ sudo ssh login
+[root@login ~]# systemctl edit slurmd</code></pre>
+<p>Insert three lines between the lines of
+<code>### Anything between here...</code> and
+<code>### Lines below this comment...</code>:</p>
+<pre><code>[Unit]
+ConditionHost=|c*
+ConditionHost=|g*</code></pre>
+<p>This will only run the service on nodes whose hostnames start with
+<code>c</code> or <code>g</code> (we don’t have any <code>g</code> nodes
+here, but this is how you can handle multiple name types).</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="ensure-slurmd-doesnt-run-on-the-login-node-1">Ensure
+<code>slurmd</code> doesn’t run on the login node</h3>
+<p>Once that file is saved, try to start the <code>slurmd</code> service
+with <code>systemctl start slurmd</code> and check its status with
+<code>systemctl status slurmd</code>:</p>
+<pre><code>o slurmd.service - Slurm node daemon
+...
+  Condition: start condition failed at Sat 2024-07-06 18:12:17
+    EDT; 4min 22s ago
+...
+Jul 06 17:14:16 login systemd[1]: Stopped Slurm node daemon.
+Jul 06 18:12:17 login systemd[1]: Slurm node daemon was skipped
+  because of an unmet condition check (ConditionHost=c*).</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-the-changes-permanent">Make the changes permanent</h3>
+<p>The <code>systemctl edit</code> command resulted in a file
+<code>/etc/systemd/system/slurmd.service.d/override.conf</code>.
+Let’s:</p>
+<ul>
+<li>make a place for it in the chroot on the SMS, and</li>
+<li>copy the file over from the login node.</li>
+</ul>
+<pre><code>[user1@sms ~]$ sudo mkdir -p \
+  ${CHROOT}/etc/systemd/system/slurmd.service.d/
+[user1@sms ~]$ sudo scp \
+  login:/etc/systemd/system/slurmd.service.d/override.conf \
+  ${CHROOT}/etc/systemd/system/slurmd.service.d/
+override.conf                    100%   23    36.7KB/s   00:00</code></pre>
+<p>(<strong>Note:</strong> we globally pre-set the <code>CHROOT</code>
+environment for any account that logs into the SMS so that you didn’t
+have to.)</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-the-changes-permanent-1">Make the changes permanent</h3>
+<p>Finally, we’ll:</p>
+<ul>
+<li>rebuild the VNFS, and</li>
+<li>reboot both the login node and a compute node to test the
+changes.</li>
+</ul>
+<pre><code>[user1@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+Using &#39;rocky9.4&#39; as the VNFS name
+...
+Total elapsed time                                          : 84.45 s
+[user1@sms ~]$ sudo ssh login reboot
+[user1@sms ~]$ sudo ssh c1 reboot</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="verify-the-changes-on-the-login-node">Verify the changes on the
+login node</h3>
+<p>Verify that the login node doesn’t start <code>slurmd</code>, but can
+still run <code>sinfo</code> without any error messages.</p>
+<pre><code>[user1@sms ~]$ sudo ssh login systemctl status slurmd
+o slurmd.service - Slurm node daemon
+...
+Jul 06 18:26:23 login systemd[1]: Slurm node daemon was
+  skipped because of an unmet condition check
+  (ConditionHost=c*).
+[user1@sms ~]$ sudo ssh login sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c[1-2]</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="verify-the-changes-on-a-compute-node">Verify the changes on a
+compute node</h3>
+<p>Verify that the compute node still starts <code>slurmd</code> (it can
+also run <code>sinfo</code>).</p>
+<pre><code>[user1@sms ~]$ sudo ssh c1 systemctl status slurmd
+o slurmd.service - Slurm node daemon
+...
+Jul 06 19:03:22 c1 slurmd[1082]: slurmd: CPUs=2 Boards=1 
+  Sockets=2 Cores=1 Threads=1 Memory=5912 TmpDisk=2956
+  Uptime=28 CPUSpecList=(null) FeaturesAvail=(null)
+  FeaturesActive=(null)
+[user1@sms ~]$ sudo ssh c1 sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c2
+normal*      up 1-00:00:00      1   down c1</code></pre>
+<p>(Yes, <code>c1</code> is marked <code>down</code>—we’ll fix that
+shortly.)</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="problem-the-login-node-doesnt-let-users-log-in">Problem: the
+login node doesn’t let users log in</h3>
+<p>What if we ssh to the login node as someone other than root?</p>
+<pre><code>[user1@sms ~]$ ssh login
+Access denied: user user1 (uid=1001) has no active jobs on this
+  node.
+Connection closed by 172.16.0.2 port 22</code></pre>
+<p>which makes this the exact opposite of a login node for normal users.
+Let’s fix that.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-the-login-node-function-as-a-login-node">Make the login
+node function as a login node</h3>
+<ul>
+<li>The <code>Access denied</code> is caused by the
+<code>pam_slurm.so</code> entry at the end of
+<code>/etc/pam.d/sshd</code>, which is invaluable on a normal compute
+node, but not on a login node.</li>
+<li>On the SMS, you can also do a
+<code>diff -u /etc/pam.d/sshd ${CHROOT}/etc/pam.d/sshd</code></li>
+<li>You’ll see that the <code>pam_slurm.so</code> line is the only
+difference between the two files.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-a-pam-change-to-the-login-node">Test a PAM change to the
+login node</h3>
+<ul>
+<li>Temporarily comment out the last line of the login node’s
+<code>/etc/pam.d/ssh</code> and see if you can ssh into the login node
+as a normal user (i.e., <code>ssh user1@login</code>).</li>
+<li>Your user should be able to log in now.</li>
+<li>In case the PAM configuration won’t let root log in, <strong>don’t
+panic</strong>! Instructors can reboot your login node from its console
+to put it back to its original state.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-the-change-permanent">Make the change permanent</h3>
+<ul>
+<li>We want to ensure that the login node gets the same
+<code>/etc/pam.d/sshd</code> that the SMS uses.</li>
+<li>We’ll follow the same method we used to give the login node a custom
+<code>slurm.conf</code>:</li>
+</ul>
+<pre><code>[user1@sms ~]$ sudo wwsh -y file import /etc/pam.d/sshd \
+  --name=sshd.login
+[user1@sms ~]$ wwsh file list
+...
+sshd.login :  rw-r--r-- 1   root root      727 /etc/pam.d/sshd</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="make-the-change-permanent-1">Make the change permanent</h3>
+<pre><code>[user1@sms ~]$ sudo wwsh -y provision set login \
+  --fileadd=sshd.login
+[user1@sms ~]$ diff -u &lt;(proprint c1) &lt;(proprint login)
+...
+  VALIDATE         = FALSE
+- FILES            = dynamic_hosts,group,munge.key,network,
+  passwd,shadow
++ FILES            = dynamic_hosts,group,munge.key,network,
+  passwd,shadow,slurm.conf.login,sshd.login
+...</code></pre>
+<p>(refer to section 3.9.3 of the install guide for previous examples of
+<code>--fileadd</code>).</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-the-change">Test the change</h3>
+<p>Reboot the login node and let’s see if we can log in as a regular
+user.</p>
+<pre><code>[user1@sms ~]$ sudo ssh login reboot
+[user1@sms ~]$ ssh login
+[user1@login ~]$</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="a-bit-more-security-for-the-login-node">A bit more security for
+the login node</h2>
+<h3 id="a-bit-more-security-for-the-login-node-1">A bit more security
+for the login node</h3>
+<p>Not too long after your SMS and/or login nodes are booted, you’ll see
+messages in the SMS <code>/var/log/secure</code> like:</p>
+<pre><code>Jul 11 11:24:06 sms sshd[162636]: Invalid user evilmike from 
+  68.66.205.120 port 1028
+...
+Jul 11 11:24:08 sms sshd[162636]: Failed password for invalid
+  user evilmike from 68.66.205.120 port 1028 ssh2
+...</code></pre>
+<p>because people who want to break into computers for various reasons
+have Internet connections.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="a-bit-more-security-for-the-login-node-2">A bit more security
+for the login node</h3>
+<p>There’s a lot of things that can be done to secure things,
+including:</p>
+<ol type="1">
+<li>Placing the SMS and login node external interfaces on protected
+network segment.</li>
+<li>Allowing only administrative users to SSH into the SMS.</li>
+<li>Replacing password-based authentication with key-based
+authentication.</li>
+</ol>
+<p>Though #3 will eliminate brute-force password guessing attacks, it’s
+usually not practical for a login node. So let’s mitigate that
+differently with <code>fail2ban</code>.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="how-fail2ban-works-by-default">How <code>fail2ban</code> works
+(by default)</h3>
+<ol type="1">
+<li>Monitor <code>/var/log/secure</code> and other logs for indicators
+of brute-force attacks (invalid users, failed passwords, etc.)</li>
+<li>If indicators from a specific IP address happen often enough over a
+period of time, use <code>firewalld</code> to block all access from that
+address for a period of time.</li>
+<li>Once that period has expired, remove the IP address from the block
+list.</li>
+</ol>
+<p>This reduces the effectiveness of brute-force password guessing by
+orders of magnitude (~10 guesses per hour versus ~100 or ~1000 guesses
+per hour).</p>
+<p>Including <code>firewalld</code> could mean that some necessary
+services get blocked by default when <code>firewalld</code> starts.
+Let’s see what those could be.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="see-what-processes-are-listening-on-the-login-node">See what
+processes are listening on the login node</h3>
+<p>We’ll use the <code>netstat</code> command to look for sockets that
+are udp or tcp, listening, and what process the socket is attached to.
+We omit anything only listening for <code>localhost</code>
+connections.</p>
+<pre><code>[user1@sms ~]$ sudo ssh login netstat -utlp | grep -v localhost
+Active Internet connections (only servers)
+Proto ... Local Address  ... State      PID/Program name
+tcp       0.0.0.0:ssh        LISTEN     1034/sshd: /usr/sbi
+tcp       0.0.0.0:sunrpc     LISTEN     1/init
+tcp6      [::]:ssh           LISTEN     1034/sshd: /usr/sbi
+tcp6      [::]:sunrpc        LISTEN     1/init
+udp       0.0.0.0:sunrpc     0.0.0.0:*  1/init
+udp       0.0.0.0:37036      0.0.0.0:*  1143/rsyslogd
+udp6      [::]:sunrpc        [::]:*     1/init</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="see-what-processes-are-listening-on-the-login-node-1">See what
+processes are listening on the login node</h3>
+<dl>
+<dt><code>sshd</code></dt>
+<dd>
+<p>secure shell daemon, the main thing we want to protect against brute
+force attempts</p>
+</dd>
+<dt><code>init</code></dt>
+<dd>
+<p>the first process started during booing the operating system.
+Effectively, this shows up when you participate in NFS file storage, as
+a server or a client (and login is a client).</p>
+</dd>
+<dt><code>rsyslogd</code></dt>
+<dd>
+<p>message logging for all kinds of applications and services</p>
+</dd>
+</dl>
+<p>Of these, <code>sshd</code> is the only one that we need to ensure
+<code>firewalld</code> doesn’t block by default. In practice, the
+<code>ssh</code> port (22) is always in the default list of allowed
+ports.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-installing-fail2ban-on-the-login-node">Test installing
+<code>fail2ban</code> on the login node</h3>
+<p>Install the fail2ban packages into the CHROOT with</p>
+<pre><code>[user1@sms ~]$ sudo yum install --installroot=${CHROOT} \
+  fail2ban
+[user1@sms ~]$ sudo chroot ${CHROOT} systemctl enable \
+  fail2ban firewalld</code></pre>
+<p>(the <code>yum</code> command will also install
+<code>firewalld</code> as a dependency of <code>fail2ban</code>).</p>
+<p>Add the following to the chroot’s <code>sshd.local</code> file with
+<code>sudo nano ${CHROOT}/etc/fail2ban/jail.d/sshd.local</code>:</p>
+<pre><code>[sshd]
+enabled = true</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="should-i-run-fail2ban-everywhere">Should I run
+<code>fail2ban</code> everywhere?</h3>
+<p><code>fail2ban</code> is probably best to keep to the login node, and
+not the compute nodes:</p>
+<ul>
+<li>Nobody can SSH into your compute nodes from outside.</li>
+<li>Thus, the only things a compute node could ban would be your SMS or
+your login node.</li>
+<li>A malicious or unwitting user could easily ban your login node from
+a compute node by SSH’ing to it repeatedly, which would effectively be a
+denial of service.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-installing-fail2ban-on-the-login-node-1">Test installing
+<code>fail2ban</code> on the login node</h3>
+<pre><code>[user1@sms ~]$ sudo mkdir -p \
+  ${CHROOT}/etc/systemd/system/fail2ban.service.d/ \
+  ${CHROOT}/etc/systemd/system/firewalld.service.d/</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-installing-fail2ban-on-the-login-node-2">Test installing
+<code>fail2ban</code> on the login node</h3>
+<pre><code>[user1@sms ~]$ sudo nano \
+  ${CHROOT}/etc/systemd/system/fail2ban.service.d/override.conf</code></pre>
+<p>Add the lines</p>
+<pre><code>[Unit]
+ConditionHost=|login*</code></pre>
+<p>save and exit with Ctrl-X.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-installing-fail2ban-on-the-login-node-3">Test installing
+<code>fail2ban</code> on the login node</h3>
+<p>Finally, duplicate the override file for <code>firewalld</code>:</p>
+<pre><code>[user1@sms ~]$ sudo cp \
+${CHROOT}/etc/systemd/system/fail2ban.service.d/override.conf \
+${CHROOT}/etc/systemd/system/firewalld.service.d/override.conf</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="test-installing-fail2ban-on-the-login-node-4">Test installing
+<code>fail2ban</code> on the login node</h3>
+<p>Befoer we go further, check if there’s anything in
+<code>/var/log/secure</code> on the login node:</p>
+<pre><code>[user1@sms ~]$ sudo ssh login ls -l /var/log/secure
+-rw------- 1 root root 0 Jul  7 03:14 /var/log/secure</code></pre>
+<p>Nope. Let’s fix that, too.</p>
+<ul>
+<li>Looking in <code>/etc/rsyslog.conf</code>, we see a bunch of things
+commented out, including the line
+<code>#authpriv.* /var/log/secure</code>.</li>
+<li>Rather than drop in an entirely new <code>rsyslog.conf</code> file
+that we’d have to maintain, rsyslog will automatically include any
+<code>*.conf</code> files in <code>/etc/rsyslog.d</code>.</li>
+<li>Let’s make one of those for the chroot.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3
+id="make-an-rsyslog.d-file-rebuild-the-vnfs-reboot-the-login-node">Make
+an rsyslog.d file, rebuild the VNFS, reboot the login node</h3>
+<pre><code>[user1@sms ~]$ echo &quot;authpriv.* /var/log/secure&quot; | \
+  sudo tee ${CHROOT}/etc/rsyslog.d/authpriv-local.conf
+authpriv.* /var/log/secure
+[user1@sms ~]$ cat \
+  ${CHROOT}/etc/rsyslog.d/authpriv-local.conf
+authpriv.* /var/log/secure
+[user1@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+[user1@sms ~]$ sudo ssh login reboot</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3
+id="post-reboot-hows-fail2ban-and-firewalld-on-the-login-node">Post-reboot,
+how’s <code>fail2ban</code> and <code>firewalld</code> on the login
+node?</h3>
+<pre><code>[user1@sms ~]$ sudo ssh login systemctl status firewalld
+[root@login ~]# systemctl status firewalld
+x firewalld.service - firewalld - dynamic firewall daemon
+     Loaded: loaded (/usr/lib/systemd/system/firewalld.service;
+       enabled; preset&gt;
+     Active: failed (Result: exit-code) since Thu 2024-07-11
+       16:49:47 EDT; 46mi&gt;
+...
+Jul 11 16:49:47 login systemd[1]: firewalld.service: Main
+  process exited, code=exited, status=3/NOTIMPLEMENTED
+Jul 11 16:49:47 login systemd[1]: firewalld.service: Failed
+  with result &#39;exit-code&#39;.</code></pre>
+<p>Not great.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="diagnosing-3notimplemented">Diagnosing
+<code>3/NOTIMPLEMENTED</code></h3>
+<div class="incremental">
+<ul class="incremental">
+<li><strong>So many</strong> Google results amount to “reboot to get
+your new kernel”, but we’ve just booted a new kernel.</li>
+<li>Red Hat has an article telling you to verify that you haven’t
+disabled module loading by checking
+<code>sysctl -a | grep modules_disabled</code>, but that’s not disabled
+either.</li>
+<li>The Red Hat article does tell you that packet filtering capabilities
+have to be enabled in the kernel, and that gets us closer.</li>
+<li>It is possible to install and start firewalld on the SMS (you don’t
+have to verify this right now), and that’s using the same kernel as the
+login node.</li>
+<li>Or <strong>is it</strong>?</li>
+</ul>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="diagnosing-3notimplemented-1">Diagnosing
+<code>3/NOTIMPLEMENTED</code></h3>
+<div class="incremental">
+<ul class="incremental">
+<li>How did we get the kernel that the login node is using?</li>
+<li>Via <code>wwbootstrap $(uname -r)</code> on the SMS (section
+3.9.1)</li>
+<li>That section <strong>also</strong> had a command that most of us
+don’t pay close attension to:
+<code>echo "drivers += updates/kernel/" &gt;&gt; /etc/warewulf/bootstrap.conf</code></li>
+<li>So though the login node is running the same kernel
+<strong>version</strong> as the SMS, it may <strong>not</strong> have
+all the drivers included.</li>
+<li>Where are the drivers we care about? <code>lsmod</code> on the SMS
+shows a lot of <code>nf</code>-named modules for the Netfilter kernel
+framework.</li>
+<li><code>find /lib/modules/$(uname -r) -name '*nf*'</code> shows these
+modules are largely located in the <code>kernel/net</code> folder
+(specifically <code>kernel/net/ipv4/netfilter</code>,
+<code>kernel/net/ipv6/netfilter</code>, and
+<code>kernel/net/netfilter</code>).</li>
+</ul>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="diagnosing-3notimplemented-2">Diagnosing
+<code>3/NOTIMPLEMENTED</code></h3>
+<p>Is <code>kernel/net</code> in our
+<code>/etc/warewulf/bootstrap.conf</code> at all?</p>
+<pre><code>[user1@sms ~]$ grep kernel/net /etc/warewulf/bootstrap.conf
+[user1@sms ~]$</code></pre>
+<p>Nope, let’s add it.</p>
+<pre><code>[user1@sms ~]$ grep kernel/net /etc/warewulf/bootstrap.conf
+[user1@sms ~]$ echo &quot;drivers += kernel/net/&quot; | \
+  sudo tee -a /etc/warewulf/bootstrap.conf
+drivers += kernel/net/
+[user1@sms ~]$ grep kernel/net /etc/warewulf/bootstrap.conf
+drivers += kernel/net/</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="diagnosing-3notimplemented-3">Diagnosing
+<code>3/NOTIMPLEMENTED</code></h3>
+<p>Let’s re-run the <code>wwbootstrap</code> command and reboot the
+login node:</p>
+<pre><code>[user1@sms ~]$ sudo wwbootstrap $(uname -r)
+...
+Bootstrap image &#39;6.1.97-1.el9.elrepo.x86_64&#39; is ready
+Done.
+[user1@sms ~]$ sudo ssh login reboot</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="did-3notimplemented-go-away">Did <code>3/NOTIMPLEMENTED</code>
+go away?</h3>
+<pre><code>[user1@sms ~]$ sudo ssh login systemctl status firewalld
+o firewalld.service - firewalld - dynamic firewall daemon
+     Loaded: loaded (/usr/lib/systemd/system/firewalld.service;
+       enabled; preset: enabled)
+     Active: active (running) since Thu 2024-07-11 21:58:18
+       EDT; 43s ago
+...
+Jul 11 21:58:18 login systemd[1]: Starting firewalld - dynamic
+  firewall daemon...
+Jul 11 21:58:18 login systemd[1]: Started firewalld - dynamic 
+  firewall daemon.</code></pre>
+<p>It did.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="does-fail2ban-actually-work-now">Does <code>fail2ban</code>
+actually work now?</h3>
+<pre><code>[user1@sms ~]$ sudo ssh login grep 68.66.205.120 \
+  /var/log/fail2ban.log
+...
+2024-07-11 22:02:27,030 fail2ban.actions ... [sshd] Ban \
+  68.66.205.120</code></pre>
+<p>It does.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="what-does-it-look-like-from-evilmikes-side">What does it look
+like from <code>evilmike</code>’s side?</h3>
+<pre><code>mike@server:~$ ssh evilmike@149.165.155.235
+evilmike@149.165.155.235&#39;s password:
+Permission denied, please try again.
+evilmike@149.165.155.235&#39;s password:
+Permission denied, please try again.
+evilmike@149.165.155.235&#39;s password:
+evilmike@149.165.155.235: Permission denied (publickey,
+  gssapi-keyex,gssapi-with-mic,password).
+mike@server:~$ ssh evilmike@149.165.155.235
+ssh: connect to host 149.165.155.235 port 22: Connection
+  refused</code></pre>
+<p><code>evilmike</code> is thwarted, at least for now.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h1 id="making-better-compute-nodes">Making better compute nodes</h1>
+<h2 id="more-seamless-reboots-of-compute-nodes">More seamless reboots of
+compute nodes</h2>
+<h3 id="why-was-c1-marked-as-down">Why was <code>c1</code> marked as
+<code>down</code>?</h3>
+<p>You can return <code>c1</code> to an idle state by running
+<code>sudo scontrol update node=c1 state=resume</code> on the SMS:</p>
+<pre><code>[user1@sms ~]$ sudo scontrol update node=c1 state=resume
+[user1@sms ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c[1-2]</code></pre>
+<p>We should configure things so that we don’t have to manually resume
+nodes every time we reboot them.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="more-seamless-reboots-of-compute-nodes-1">More seamless reboots
+of compute nodes</h3>
+<ul>
+<li>Slurm doesn’t like it when a node gets rebooted without its
+knowledge.</li>
+<li>There’s an <code>scontrol reboot</code> option that’s handy to have
+nodes reboot when system updates occur, but it requires a valid setting
+for <code>RebootProgram</code> in
+<code>/etc/slurm/slurm.conf</code>.</li>
+<li>By default, Slurm and OpenHPC don’t ship with a default
+<code>RebootProgram</code>, so let’s make one.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="adding-a-valid-rebootprogram">Adding a valid
+<code>RebootProgram</code></h3>
+<pre><code>[user1@sms ~]$ grep -i reboot /etc/slurm/slurm.conf
+#RebootProgram=
+[user1@sms ~]$ echo &#39;RebootProgram=&quot;/sbin/shutdown -r now&quot;&#39; \
+  | sudo tee -a /etc/slurm/slurm.conf
+[user1@sms ~]$ grep -i reboot /etc/slurm/slurm.conf
+#RebootProgram=
+RebootProgram=&quot;/sbin/shutdown -r now&quot;</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="informing-all-nodes-of-the-changes-and-testing-it-out">Informing
+all nodes of the changes and testing it out</h3>
+<pre><code>[user1@sms ~]$ sudo scontrol reconfigure
+[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME c1</code></pre>
+<ul>
+<li><code>scontrol reboot</code> will wait for all jobs on a group of
+nodes to finish before rebooting the nodes.</li>
+<li><code>scontrol reboot ASAP</code> will immediately put the nodes in
+a <code>DRAIN</code> state, routing all pending jobs to other nodes
+until the rebooted nodes are returned to service.</li>
+<li><code>scontrol reboot ASAP nextstate=RESUME</code> will set the
+nodes to accept jobs after the reboot. <code>nextstate=DOWN</code> will
+lave the nodes in a <code>DOWN</code> state if you need to do more work
+on them before returning them to service.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="did-it-work">Did it work?</h3>
+<pre><code>[user1@sms ~]$ sudo ssh c1 uptime
+ 15:52:27 up 1 min,  0 users,  load average: 0.09, 0.06, 0.02
+[user1@sms ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      1   idle c[1-2]</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="semi-stateful-node-provisioning">Semi-stateful node
+provisioning</h2>
+<h3 id="downsides-of-stateless-provisioning">Downsides of stateless
+provisioning</h3>
+<p>Log into <code>c1</code> as root, check available disk space and
+memory, then allocate a 5 GB array in memory:</p>
+<pre><code>[user1@sms ~]$ sudo ssh c1
+[root@c1 ~]# df -h /tmp
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           2.9G  843M  2.1G  29% /
+[root@c1 ~]# free -m
+               total        used        free ...
+Mem:            5912        3162        2862 ...
+Swap:              0           0           0 ...
+[root@c1 ~]# module load py3-numpy
+[root@c1 ~]# python3 -c \
+  &#39;import numpy as np; x=np.full((25000, 25000), 1)&#39;
+[root@c1 ~]#</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="downsides-of-stateless-provisioning-1">Downsides of stateless
+provisioning</h3>
+<p>Consume some disk space in /tmp, try to allocate the same 5 GB array
+again:</p>
+<pre><code>[root@c1 ~]# dd if=/dev/zero of=/tmp/foo bs=1M count=1024
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 0.63492 s, 1.7 GB/s
+[root@c1 ~]# module load py3-numpy
+[root@c1 ~]# python3 -c \
+  &#39;import numpy as np; x=np.full((25000, 25000), 1)&#39;
+Killed</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="downsides-of-stateless-provisioning-2">Downsides of stateless
+provisioning</h3>
+<p>Clean off the disk usage, allocate the 5 GB array in memory once
+more, and log out from the node:</p>
+<pre><code>[root@c1 ~]# rm /tmp/foo
+[root@c1 ~]# python3 -c \
+  &#39;import numpy as np; x=np.full((25000, 25000), 1)&#39;
+[root@c1 ~]# exit
+[user1@sms ~]$ </code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="summary-of-the-default-openhpc-settings">Summary of the default
+OpenHPC settings</h3>
+<ol type="1">
+<li>The root filesystem is automatically sized to 50% of the node
+memory.</li>
+<li>There’s no swap space.</li>
+<li>Consumption of disk space affects the workloads you can run (since
+disk space is really in RAM).</li>
+</ol>
+<p>Even if we reformat node-local storage every time we reboot, moving
+file storage from RAM to disk is beneficial.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="strategies">Strategies</h3>
+<div class="columns" data-align="top">
+<div class="column" style="width:50%;">
+<h4 id="typical-bare-metal-node">Typical bare-metal node</h4>
+<ul>
+<li>PXE handled by network card, all disks available for node-local
+storage</li>
+<li>Usually, the default kernel contains all the drivers you need</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h4 id="jetstream2-instance">Jetstream2 instance</h4>
+<ul>
+<li>First disk (/dev/vda) exists to provide iPXE support, so don’t break
+that</li>
+<li>Some extra steps may be needed to enable storage and filesystem
+kernel modules</li>
+</ul>
+</div>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="examine-the-existing-partition-scheme">Examine the existing
+partition scheme</h3>
+<p>Log back into a compute node as root, check the existing partition
+table:</p>
+<pre><code>[user1@sms ~]$ sudo ssh c1 parted -l /dev/vda
+Model: Virtio Block Device (virtblk)
+Disk /dev/vda: 21.5GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system     Name  Flags
+ 1      1049kB  3146kB  2097kB                  EFI   boot, esp</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="summary-of-existing-partition-scheme">Summary of existing
+partition scheme</h3>
+<ol type="1">
+<li>GPT (GUID partition table) method on both node types</li>
+<li>Different amounts of disk space on each node type</li>
+<li>Each sector is 512 bytes</li>
+<li>Bootable partition 1 (from 1049 kB = 1 MiB to 3146 kB = 3 MiB) for
+iPXE</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="plan-for-new-partition-scheme">Plan for new partition
+scheme</h3>
+<ol type="1">
+<li>Non-destructive partitioning of <code>/dev/vda</code> once (outside
+of Warewulf, with a <code>parted</code> script).</li>
+<li>512 MiB partition for <code>/boot</code>.</li>
+<li>2 GiB partition for swap.</li>
+<li>2 GiB partition for <code>/</code>.</li>
+<li>remaining space for <code>/tmp</code>.</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="define-new-partition-scheme">Define new partition scheme</h3>
+<p>Could make a copy of an OpenHPC-provided example partition scheme (in
+<code>/etc/warewulf/filesystem/examples</code>), but we’ll start one
+from scratch:</p>
+<pre><code>[user1@sms ~]$ sudo nano \
+  /etc/warewulf/filesystem/jetstream.cmds</code></pre>
+<ul>
+<li>The <code>.cmds</code> file is a mix of <code>parted</code>
+commands, <code>mkfs</code> parameters, and <code>/etc/fstab</code>
+information.</li>
+<li>It’s typical, <strong>but not 100% required</strong>, to give a full
+set of <code>select</code>, <code>mkpart</code>, and <code>name</code>
+commands for <code>parted</code>.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="define-new-partition-scheme-1">Define new partition scheme</h3>
+<p>Contents of <code>jetstream.cmds</code> (part 1):</p>
+<pre><code>select /dev/vda</code></pre>
+<p>On Jetstream2:</p>
+<ul>
+<li>we leave <code>/dev/vda1</code> unmodified, since we need it for
+iPXE booting,</li>
+<li>we “semi-manually” (i.e., outside of Warewulf, but using a script)
+partition the rest of <code>/dev/vda</code> to include
+<ul>
+<li>512 MiB for <code>/boot</code></li>
+<li>2 GiB for swap</li>
+<li>2 GiB for <code>/</code></li>
+<li>remaining space for <code>/tmp</code></li>
+</ul></li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="define-new-partition-scheme-2">Define new partition scheme</h3>
+<p>Contents of <code>jetstream.cmds</code> (part 2):</p>
+<pre><code># mkpart primary 3MiB 515MiB
+# mkpart primary 515MiB 2563MiB
+# mkpart primary 2563MiB 4611MiB
+# mkpart primary 4611MiB 100%
+name 2 boot
+name 3 swap
+name 4 root
+name 5 tmp</code></pre>
+<ul>
+<li>Note how to create partitions, and add commands to label them.</li>
+<li><code>mkpart</code> commands are intended to be comments here, so
+that Warewulf can ignore them, but we can keep everything in one
+place.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="define-new-partition-scheme-3">Define new partition scheme</h3>
+<p>Contents of <code>jetstream.cmds</code> (part 3):</p>
+<pre><code>## mkfs NUMBER FS-TYPE [ARGS...]
+mkfs 2 ext4 -L boot
+mkfs 3 swap
+mkfs 4 ext4 -L root
+mkfs 5 ext4 -L tmp
+## fstab NUMBER mountpoint type opts freq passno
+fstab 4 /     ext4 defaults 0 0
+fstab 2 /boot ext4 defaults 0 0
+fstab 3 none  swap defaults 0 0
+fstab 5 /tmp  ext4 defaults 0 0</code></pre>
+<ul>
+<li>Format partitions and mount them.</li>
+<li>Save and exit <code>nano</code> with <code>Ctrl-X</code>.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="partition-the-disks-outside-of-warewulf">Partition the disks
+outside of Warewulf</h3>
+<ul>
+<li><code>parted</code> has a <code>--script</code> parameter helpful
+for passing in one or more commands at the command line.</li>
+<li>We want to pass in the commented mkpart commands of our
+<code>jetstream.cmds</code> file.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="show-the-mkpart-lines">Show the <code>mkpart</code> lines</h3>
+<pre><code>[user1@sms ~]$ grep mkpart \
+  /etc/warewulf/filesystem/jetstream.cmds
+# mkpart primary 3MiB 515MiB
+# mkpart primary 515MiB 2663MiB
+# mkpart primary 2663MiB 4611MiB
+# mkpart primary 4611MiB 100%</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="take-out-the-signs-from-the-mkpart-lines">Take out the
+<code>#</code> signs from the <code>mkpart</code> lines</h3>
+<pre><code>[user1@sms ~]$ grep mkpart \
+  /etc/warewulf/filesystem/jetstream.cmds | sed &#39;s/#//g&#39;
+ mkpart primary 3MiB 515MiB
+ mkpart primary 515MiB 2663MiB
+ mkpart primary 2663MiB 4611MiB
+ mkpart primary 4611MiB 100%</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="put-all-the-commands-on-one-line">Put all the commands on one
+line</h3>
+<pre><code>[user1@sms ~]$ echo $(grep mkpart \
+  /etc/warewulf/filesystem/jetstream.cmds | sed &#39;s/#//g&#39;)
+mkpart primary 3MiB 515MiB mkpart primary 515MiB 2663MiB mkpart primary ext4 2663MiB 4611MiB mkpart
+  primary ext4 4611MiB 100%</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="partition-the-drive">Partition the drive</h3>
+<p>(all of the below goes on one literal line, no backslashes, line
+breaks, or anything else)</p>
+<pre><code>[user1@sms ~]$ sudo ssh c1 parted --script /dev/vda
+  $(echo $(grep mkpart
+  /etc/warewulf/filesystem/jetstream.cmds |
+  sed &#39;s/#//g&#39;))</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="check-your-results">Check your results</h3>
+<pre><code>[user1@sms ~]$ sudo ssh c1 parted -l
+Model: Virtio Block Device (virtblk)
+Disk /dev/vda: 64.4GB
+...
+Number Start  End    Size   File system Name    Flags
+ 1     1049kB 3146kB 2097kB             EFI     boot, esp
+ 2     3146kB 540MB  537MB              primary
+ 3     540MB  2688MB 2147MB             primary swap
+ 4     2688MB 4835MB 2147MB             primary
+ 5     4835MB 21.5GB 16.6GB             primary</code></pre>
+<p>Now repeat the previous <code>sudo ssh NODE parted --script</code>
+command for the other node (<code>c2</code>).</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3
+id="apply-the-warewulf-filesystem-provisioning-commands-to-the-nodes">Apply
+the Warewulf filesystem provisioning commands to the nodes</h3>
+<pre><code>[user1@sms ~]$ sudo wwsh provision set &#39;c*&#39; \
+  --filesystem=jetstream</code></pre>
+<p><strong>Do not reboot your nodes yet!</strong></p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="what-could-possibly-go-wrong">What could possibly go wrong?</h3>
+<ul>
+<li>A lot, if you consider some edge cases and corner cases.</li>
+<li>This was by far the slowest-progressing and most error-prone section
+of the tutorial to develop.</li>
+<li>Using <code>wwsh provision set NODE --preshell=1</code> and/or
+<code>--postshell=1</code> during debugging was invaluable.</li>
+<li>Rather than have y’all suffer through this without easy access to a
+console, I’ll take you through what would have gone wrong if we’d
+rebooted just now.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="what-went-wrong-part-1">What went wrong (part 1)</h3>
+<figure>
+<img
+src="figures/starting-the-provision-handler-filesystems-not-ready-retrying.png"
+style="width:90.0%" alt="Device not ready, retrying" />
+<figcaption aria-hidden="true">Device not ready, retrying</figcaption>
+</figure>
+<ul>
+<li>Running <code>dmesg | grep vd</code> at the <code>postshell</code>
+command prompt confirmed that no <code>/dev/vd</code> devices were
+found.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="how-it-got-fixed-part-1">How it got fixed (part 1)</h3>
+<ul>
+<li>Comparing the <code>lsmod</code> output on the failing node versus
+the SMS indicated we were missing the <code>virtio_blk</code> kernel
+module.</li>
+<li>Running <code>modprobe virtio_blk</code> and
+<code>dmesg | grep vd</code> at the <code>postshell</code> command
+prompt confirmed this.</li>
+<li>Warewulf fix is to:
+<ul>
+<li>run
+<code>echo modprobe += virtio_blk | sudo tee -a /etc/warewulf/bootstrap.conf</code></li>
+<li>run <code>sudo wwbootstrap KERNEL_VERSION</code></li>
+<li>reboot the node and try again.</li>
+</ul></li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="what-went-wrong-part-2">What went wrong (part 2)</h3>
+<figure>
+<img src="figures/mounting-root-error.png" style="width:90.0%"
+alt="Mounting /, error" />
+<figcaption aria-hidden="true">Mounting /, error</figcaption>
+</figure>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="how-it-got-fixed-part-2">How it got fixed (part 2)</h3>
+<figure>
+<img src="figures/parted-l-looks-ok.png" style="width:70.0%"
+alt="parted -l looks ok" />
+<figcaption aria-hidden="true"><code>parted -l</code> looks
+ok</figcaption>
+</figure>
+<ul>
+<li>running <code>parted -l</code> showed a valid partition table</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="how-it-got-fixed-part-2-1">How it got fixed (part 2)</h3>
+<div class="incremental">
+<ul class="incremental">
+<li>Trying to mount the proposed root partition with
+<code>mkdir /mnt ; mount -t auto /dev/sdb4 /mnt</code> failed with
+<code>mount: mounting /dev/vdb4 as /mnt failed: No such file or directory</code></li>
+<li>But both <code>/mnt</code> and <code>/dev/sdb4</code> both existed,
+as seen from <code>ls -l</code> on each of them.</li>
+<li>Surprisingly, when I left the root partition as a ramdisk and tried
+to partition and mount swap and <code>/tmp</code> from disk partitions,
+provisioning threw errors, but post-provisioning, both swap and
+<code>/tmp</code> <strong>were available</strong> to the node!</li>
+</ul>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="how-it-got-fixed-part-2-2">How it got fixed (part 2)</h3>
+<div class="incremental">
+<ul class="incremental">
+<li>What was different? A missing filesystem module in the provisioning
+kernel (in my case, <code>ext4</code>).</li>
+<li>Running <code>modprobe ext4</code> at the <code>postshell</code>
+command prompt and re-running the <code>mount</code> command above
+caused the filesystem to mount.</li>
+<li>Warewulf fix is to:
+<ul class="incremental">
+<li>run
+<code>echo modprobe += ext4 | sudo tee -a /etc/warewulf/bootstrap.conf</code></li>
+<li>run <code>sudo wwbootstrap KERNEL_VERSION</code></li>
+<li>reboot the node and try again.</li>
+</ul></li>
+</ul>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3
+id="make-the-necessary-wwbootstrap-changes-then-reboot-your-nodes">Make
+the necessary <code>wwbootstrap</code> changes, then reboot your
+nodes</h3>
+<pre><code>[user1@sms ~]$ echo modprobe += virtio_blk | \
+  sudo tee -a /etc/warewulf/bootstrap.conf
+[user1@sms ~]$ echo modprobe += ext4 | \
+  sudo tee -a /etc/warewulf/bootstrap.conf
+[user1@sms ~]$ sudo wwbootstrap $(uname -r)
+[user1@sms ~]$ sudo pdsh -w &#39;c[1-2],g[1-2]&#39; reboot</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="final-result-on-a-compute-node-part-1">Final result on a compute
+node (part 1)</h3>
+<pre><code>[user1@sms ~]$ sudo ssh c1 &quot;df -h; free -m&quot;
+Filesystem                Size  Used Avail Use% Mounted on
+devtmpfs                  2.9G     0  2.9G   0% /dev
+/dev/vda4                 1.9G  853M  914M  49% /
+tmpfs                     2.9G     0  2.9G   0% /dev/shm
+tmpfs                     1.2G  8.5M  1.2G   1% /run
+/dev/vda2                 488M   40K  452M   1% /boot
+/dev/vda5                  16G   72K   15G   1% /tmp
+...
+       total  used  free  shared  buff/cache  available
+Mem:    5912   382  4844       8         939       5530
+Swap:   2047     0  2047</code></pre>
+<p>Note that the <code>used</code> memory column has dropped by nearly
+90% from before.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="final-result-on-a-compute-node-part-2">Final result on a compute
+node (part 2)</h3>
+<p>Consume 5 GiB of space in /tmp (we only used 1 GiB previously), then
+allocate 5 GB for an array in memory:</p>
+<pre><code>[user1@sms ~]$ sudo ssh c1
+[root@c1 ~]# dd if=/dev/zero of=/tmp/foo bs=1M count=5120
+5120+0 records in
+5120+0 records out
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 8.97811 s, 598 MB/s
+[root@c1 ~]# module load py3-numpy
+[root@c1 ~]# python3 -c \
+  &#39;import numpy as np; x=np.full((25000, 25000), 1)&#39;
+[root@c1 ~]# rm /tmp/foo</code></pre>
+<p>No <code>Killed</code> messages due to running out of memory. We’re
+able to consume much more <code>/tmp</code> space and all practically
+the RAM without conflict.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="decoupling-kernels-from-the-sms">Decoupling kernels from the
+SMS</h2>
+<h3 id="decoupling-kernels-from-the-sms-1">Decoupling kernels from the
+SMS</h3>
+<ul>
+<li>If you keep your HPC around for a long period, you might want/need
+to support different operating systems or releases.</li>
+<li>Maybe you need to run a few nodes on Rocky 8 while keeping the SMS
+on Rocky 9 (<code>wwmkchroot</code> supports that).</li>
+<li>Maybe you need to use a different kernel version for exotic hardware
+or new features, but don’t want to risk the stability of your SMS.</li>
+<li>A simple <code>wwbootstrap $(uname -r)</code> won’t do that.</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="decoupling-kernels-from-the-sms-2">Decoupling kernels from the
+SMS</h3>
+<p>Check <code>wwbootstrap --help</code>:</p>
+<pre><code>[user1@sms ~]$ wwbootstrap --help
+USAGE: /usr/bin/wwbootstrap [options] kernel_version
+...
+    OPTIONS:
+        -c, --chroot  Look into this chroot directory to find
+                      the kernel
+...</code></pre>
+<p>So if we install a kernel into the <code>${CHROOT}</code> like any
+other package, we can bootstrap from it instead of the SMS kernel.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="install-a-different-kernel-into-the-chroot-bootstrap-it">Install
+a different kernel into the CHROOT, bootstrap it</h3>
+<pre><code>[user1@sms ~]$ sudo yum -y install --installroot=$CHROOT kernel
+...
+Installing:
+ kernel  x86_64 5.14.0-427.24.1.el9_4 ...
+...
+Complete!
+[user1@sms ~]$ sudo wwbootstrap --chroot=${CHROOT} \
+  5.14.0-427.24.1.el9_4.x86_64
+Number of drivers included in bootstrap: 880
+...
+Bootstrap image &#39;5.14.0-427.24.1.el9_4.x86_64&#39; is ready
+Done.</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="check-your-nodes-provisioning-summary">Check your nodes’
+provisioning summary</h3>
+<pre><code>[user1@sms ~]$ wwsh provision list
+NODE                VNFS            BOOTSTRAP         ...    
+=========================================================
+c1                  rocky9.4        6.1.97-1.el9.elrep...
+c2                  rocky9.4        6.1.97-1.el9.elrep...
+login               rocky9.4        6.1.97-1.el9.elrep...</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="change-the-default-kernel-for-nodes-reboot-them.">Change the
+default kernel for nodes, reboot them.</h3>
+<pre><code>[user1@sms ~]$ sudo wwsh provision set &#39;*&#39; \
+  --bootstrap=5.14.0-427.24.1.el9_4.x86_64
+Are you sure you want to make the following changes to 5
+  node(s):
+
+     SET: BOOTSTRAP            = 5.14.0-427.24.1.el9_4.x86_64
+
+Yes/No&gt; y
+[user1@sms ~]$ sudo scontrol reboot ASAP nextstate=RESUME \
+  c[1-2]
+[user1@sms ~]$ sudo pdsh -w &#39;g[1-2],login&#39; reboot</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="verify-everything-came-back-up">Verify everything came back
+up</h3>
+<pre><code>[user1@sms ~]$ sudo pdsh -w &#39;c[1-2],login&#39; uname -r \
+  | sort
+c1: 5.14.0-427.24.1.el9_4.x86_64
+c2: 5.14.0-427.24.1.el9_4.x86_64
+login: 5.14.0-427.24.1.el9_4.x86_64
+[user1@sms ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+normal*      up 1-00:00:00      2   idle c[1-2]</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="management-of-gpu-drivers">Management of GPU drivers</h2>
+<p>Unfortunately, we can’t do this one as a live in-class exercise.</p>
+<ul>
+<li>Jetstream2 uses NVIDIA GRID to split up GPUs</li>
+<li>GRID drivers are proprietary and the license doesn’t alllow
+redistribution</li>
+<li>Typical bare-metal drivers that <strong>can</strong> be
+redistributed don’t work with GRID</li>
+</ul>
+<p>So instead, we’ll show you how we do this on a bare-metal
+installation of OpenHPC 2 and Rocky 8. None of the steps change for
+OpenHPC 3 or Rocky 9.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="see-what-we-have">See what we have</h3>
+<pre><code>[renfro2@sms ~]$ sudo ssh gpunode002 lspci | grep -i nvidia
+05:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+06:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+84:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+85:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+[renfro2@sms ~]$ sudo ssh gpunode002 nvidia-smi | grep Driver
+| NVIDIA-SMI 470.199.02   Driver Version: 470.199.02   ...
+[renfro2@sms ~]$ sudo ssh gpunode002 &quot;uname -r&quot;
+4.18.0-513.24.1.el8_9.x86_64
+[renfro2@sms ~]$ KV=$(sudo ssh gpunode002 &quot;uname -r&quot;)</code></pre>
+<p>On a system that’s never had NVIDIA drivers installed, the
+<code>nvidia-smi</code> command will return a
+<code>command not found</code>.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="download-the-driver">Download the driver</h3>
+<pre><code>[renfro2@sms ~]$ NV=470.256.02
+[renfro2@sms ~]$ BASEURL=https://us.download.nvidia.com/tesla
+[renfro2@sms ~]$ wget \
+  ${BASEURL}/${NV}/NVIDIA-Linux-x86_64-${NV}.run
+...
+... &#39;NVIDIA-Linux-x86_64-470.256.02.run&#39; saved ...
+[renfro2@sms ~]$</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="prepare-to-install-the-driver">Prepare to install the
+driver</h3>
+<pre><code>[renfro2@sms ~]$ sudo install -o root -g root -m 0755 \
+  NVIDIA-Linux-x86_64-${NV}.run ${CHROOT}/root
+[renfro2@sms ~]$ sudo mount -o rw,bind /proc ${CHROOT}/proc
+[renfro2@sms ~]$ sudo mount -o rw,bind /dev ${CHROOT}/dev</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="install-the-driver-clean-up-update-vnfs">Install the driver,
+clean up, update VNFS</h3>
+<pre><code>[user1@sms ~]$ sudo chroot ${CHROOT} \
+  /root/NVIDIA-Linux-x86_64-${NV}.run --disable-nouveau \
+  --kernel-name=${KV} --no-drm --run-nvidia-xconfig --silent</code></pre>
+<p>You’ll get up to five harmless warnings from this:</p>
+<ol type="1">
+<li><strong>You do not appear to have an NVIDIA GPU supported
+by…</strong>.</li>
+<li><strong>One or more modprobe configuration files to disable Nouveau
+are already present at…</strong></li>
+<li><strong>The nvidia-drm module will not be installed</strong></li>
+<li><strong>nvidia-installer was forced to guess the X library
+path</strong></li>
+<li><strong>Unable to determine the path to install the
+libglvnd</strong></li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="clean-up-update-the-vnfs-reboot">Clean up, update the VNFS,
+reboot</h3>
+<pre><code>[renfro2@sms ~]$ sudo rm \
+  ${CHROOT}/root/NVIDIA-Linux-x86_64-${NV}.run
+[renfro2@sms ~]$ sudo umount ${CHROOT}/proc ${CHROOT}/dev
+[renfro2@sms ~]$ sudo wwvnfs --chroot=${CHROOT}
+[renfro2@sms ~]$ wwsh provision print gpunode002 | \
+  egrep -i &#39;bootstrap|vnfs&#39;
+    gpunode002: BOOTSTRAP        = 4.18.0-513.24.1.el8_9.x86_64
+    gpunode002: VNFS             = rocky-8-k80
+[renfro2@sms ~]$ sudo ssh gpunode002 reboot</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="wait-for-the-reboot-and-provision-check-versions">Wait for the
+reboot and provision, check versions</h3>
+<pre><code>[renfro2@sms ~]$ sudo ssh gpunode002 uptime
+ 15:11:05 up 1 min,  0 users,  load average: 1.56, 0.51, 0.18
+[renfro2@sms ~]$ sudo ssh gpunode002 lspci | grep -i nvidia
+05:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+06:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+84:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+85:00.0 ... NVIDIA Corporation GK210GL [Tesla K80] (rev a1)
+[renfro2@sms ~]$ sudo ssh gpunode002 nvidia-smi | grep Driver
+| NVIDIA-SMI 470.256.02   Driver Version: 470.256.02   ...</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h1 id="managing-system-complexity">Managing system complexity</h1>
+<h2 id="configuration-settings-for-different-node-types">Configuration
+settings for different node types</h2>
+<p>What tools have we used so far to define node settings?</p>
+<ol type="1">
+<li><code>wwsh node</code> for node name and network information (MACs,
+IPs, provisioning interface)</li>
+<li><code>wwsh provision</code> for VNFS, kernel, kernel parameters,
+files</li>
+<li>When the files include <code>systemd</code> services, other options
+become possible via <code>ConditionHost</code> or similar
+statements</li>
+</ol>
+<p>Manually building these up over time and storing the results in the
+Warewulf database may be tedious to review, and we might want to easily
+port our setup to a dev/test environment, a new version of OpenHPC,
+etc.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="automation-for-warewulf3-provisioning">Automation for Warewulf3
+provisioning</h2>
+<p><strong>Any</strong> kind of automation, scripting, or orchestration
+is beneficial for managing cluster settings:</p>
+<ul>
+<li>shell scripts,</li>
+<li>Python scripts,</li>
+<li>Ansible playbooks,</li>
+<li>Puppet manifests,</li>
+<li>etc.</li>
+</ul>
+<p>Ansible is pretty popular: ACCESS’ Basic Cluster project, Tim
+Middelkoop’s <code>ohpc-jetstream2</code> repository, StackHPC. Compute
+Canada’s Magic Castle uses Puppet. TN Tech uses Python scripts for their
+Warewulf management.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="excerpts-from-python-scripts-installing-gpu-drivers">Excerpts
+from Python scripts (installing GPU drivers)</h3>
+<pre><code># These could be saved into a common settings file
+CHROOTS = {
+  None:   [&#39;/opt/ohpc/admin/images/rocky-cpu&#39;, None],
+  &#39;a100&#39;: [&#39;/opt/ohpc/admin/images/rocky-a100&#39;, &#39;550.90.07&#39;],
+  &#39;k80&#39;:  [&#39;/opt/ohpc/admin/images/rocky-k80&#39;, &#39;470.256.02&#39;],
+  }
+NV_BASEURL = &#39;https://us.download.nvidia.com/tesla&#39;
+KERNEL_VER = &#39;4.18.0-513.5.1.el8_9.x86_64&#39;
+NV_OPTS = &quot; &quot;.join([f&quot;--disable-nouveau&quot;,
+                    f&quot;--kernel-name={KERNEL_VER}&quot;,
+                    f&quot;--no-drm&quot;,
+                    f&quot;--run-nvidia-xconfig&quot;,
+                    f&quot;--silent&quot;,
+                    ])</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="excerpts-from-python-scripts-installing-gpu-drivers-1">Excerpts
+from Python scripts (installing GPU drivers)</h3>
+<pre><code># This could be a function or a script to install GPU drivers
+import os
+for gpu in CHROOTS.keys():
+  if gpu == None:
+    continue
+  chroot, version = CHROOTS[gpu]
+  driver = f&quot;NVIDIA-Linux-x86_64-{version}.run&quot;
+  os.system(f&quot;curl -sLO {NV_BASEURL}/{version}/{driver}&quot;)
+  os.system(f&quot;install -o root -g root {driver} {chroot}/root/&quot;)
+  # to be continued...</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="excerpts-from-python-scripts-installing-gpu-drivers-2">Excerpts
+from Python scripts (installing GPU drivers)</h3>
+<pre><code>  # continued...
+  for mnt in [&#39;proc&#39;, &#39;dev&#39;]:
+    os.system(f&quot;mount -o rw,bind /{mnt} {chroot}/{mnt}&quot;)
+  os.system(f&quot;chroot {chroot} /root/{driver} {driver_opts}&quot;)
+  for mnt in [&#39;proc&#39;, &#39;dev&#39;]:
+    os.system(f&quot;umount {chroot}/{mnt}&quot;)
+  os.remove(f&quot;{chroot}/root/{driver}&quot;)</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="excerpts-from-python-scripts-managing-node-properties">Excerpts
+from Python scripts (managing node properties)</h3>
+<pre><code>NODES = [
+  { &#39;hostname&#39;: &#39;gpunode012&#39;,
+    &#39;eth_dev&#39;: &#39;eth2&#39;, &#39;eth_ip&#39;: &#39;149.149.248.204/25&#39;,
+    &#39;eth_dev_mac&#39;: &#39;B0:7B:25:DE:68:26&#39;,
+    &#39;ib_dev&#39;: &#39;ib0&#39;, &#39;ib_ip&#39;: &#39;172.16.1.204/23&#39;,
+    &#39;stateful&#39;: &#39;2-drive&#39;, &#39;gpu&#39;: &#39;a100&#39;, },
+  { &#39;hostname&#39;: &#39;login&#39;, &#39;role&#39;: &#39;login&#39;,
+    &#39;eth_dev&#39;: &#39;eth0&#39;, &#39;eth_ip&#39;: &#39;149.149.248.135/25&#39;,
+    &#39;eth_dev_mac&#39;: &#39;00:50:56:81:50:72&#39;,
+    &#39;extra_interfaces&#39;: { &#39;eth1&#39;: &#39;10.10.25.126/21&#39; }, },
+  ]
+file_list = [&quot;dynamic_hosts&quot;, &quot;passwd&quot;, &quot;group&quot;, &quot;shadow&quot;,
+             &quot;munge.key&quot;,]</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3
+id="excerpts-from-python-scripts-managing-node-properties-1">Excerpts
+from Python scripts (managing node properties)</h3>
+<pre><code>for node in NODES:
+  fileadd_list = []
+  fileadd_list.append(f&quot;network.{node[&#39;eth_dev&#39;]}&quot;)
+  if &#39;extra_interfaces&#39; in node:
+    for dev, ip in node.extra_interfaces.items():
+      ip_mask = ipaddress.ip_interface(ip)
+      fileadd_list.append(f&quot;ifcfg-{dev}.ww&quot;)
+      os.system(f&quot;wwsh -y node set {node[&#39;hostname&#39;]}&quot;
+                f&quot;-D {dev} --ipaddr={ip_mask.ip}&quot;
+                f&quot;--netmask={ip_mask.netmask}&quot;)
+  os.system(f&quot;wwsh -y provision set {node[&#39;hostname&#39;]}&quot;
+            f&quot;--files={&#39;,&#39;.join(file_list)}&quot;
+            f&quot;--fileadd={&#39;,&#39;.join(fileadd_list)}&quot;)</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h1 id="configuring-slurm-policies">Configuring Slurm policies</h1>
+<h2 id="introduction-1">Introduction</h2>
+<ul>
+<li>Largely adapted from some design work done in 2020</li>
+<li>Not all of these have been implemented at TN Tech</li>
+<li>The technical implementation is accurate, though</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="terminology-from-slurm-scheduler">Terminology (from Slurm
+scheduler)</h3>
+<ul>
+<li>User: an individual student, faculty, or staff with HPC access</li>
+<li>Account: analagous to a bank account or billable entity</li>
+<li>Partition: queue for running jobs</li>
+<li>Cluster: for now, the entire campus HPC environment.</li>
+<li>Association: a combination of cluster, user, account, and optionally
+partition</li>
+<li>TRES: trackable resource such as a CPU, GPU, or memory</li>
+<li>QOS: quality of service, can be used to adjust priority or enforce
+TRES limits</li>
+</ul>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-types">Association Types</h3>
+<ul>
+<li>Member: any entity with sufficient funding for hardware
+purchases</li>
+<li>PAYGO: any entity with sufficient funding for purchasing resource
+time (pay as you go)</li>
+<li>Gratis: any unfunded entity</li>
+</ul>
+<p>An HPC user could submit jobs under any of these types: they could be
+on a well-funded project (member), part of another project or class that
+bought resource time (PAYGO), and submit personal, unfunded jobs
+(gratis).</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="policy-goals">Policy Goals</h3>
+<ol type="1">
+<li>All HPC users will have the ability to run jobs. No user is refused
+access due to lack of funding.</li>
+<li>Gratis associations will be limited in the amount of TRES that can
+be used and priority to start jobs.</li>
+<li>The <strong>lower bound</strong> of resource share used by an
+association will correspond to its share of funding (if everyone submits
+the maximum number of jobs).</li>
+<li>The <strong>expected value</strong> of resource share used by an
+association will exceed its share of funding (if others submit less than
+the maximum number of jobs).</li>
+<li>Member and PAYGO associations will have fewer limits on TRES times
+and amounts, and will get higher priority to start jobs.</li>
+<li>Member and PAYGO associations will be able to decide how to
+distribute their share of resources among their users.</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="example-proposed-policy">Example proposed policy</h2>
+<h3 id="example-proposed-policy-1">Example proposed policy</h3>
+<ol type="1">
+<li>Gratis associations will have access to short-length (2 hour) and
+medium-length (24 hour) partitions.</li>
+<li>Member and PAYGO associations will have access to additional
+long-length partitions (7? days).</li>
+<li>Gratis associations will get a small fairshare and limited amounts
+of TRES.</li>
+<li>Member associations will get a fairshare proportional to their level
+of funding.</li>
+<li>PAYGO associations will get the remaining fairshare, but will have a
+hard limit on their TRES usage.</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="major-design-concepts">Major design concepts</h3>
+<ol type="1">
+<li>PAYGO associations can buy in at a small amount (TBD: how
+small?)</li>
+<li>Member associations can buy in at the amortized cost of a feasible
+combination of TRES for a few years (TBD: minimum amounts, maximum time
+limits?)</li>
+<li>Member associations can buy in for funding entire nodes (TBD:
+minimum amount &gt;$5k, maximum time limits?)</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="technical-policy-implementation">Technical policy
+implementation</h2>
+<h3 id="technical-policy-implementation-1">Technical policy
+implementation</h3>
+<p>Tools available:</p>
+<ol type="1">
+<li>Fairshare levels applied to each association</li>
+<li>QOS to enforce limits on PAYGO associations</li>
+<li>Access to partitions can be allowed or denied on a per-account
+basis</li>
+</ol>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="what-users-would-see-batch-jobs">What users would see: batch
+jobs</h3>
+<ul>
+<li><p>Gratis associations (default), no changes to scripts
+required.</p></li>
+<li><p>Member associations, add to job script:</p>
+<pre><code>  #SBATCH --account=member1</code></pre></li>
+<li><p>PAYGO associations, add to job script:</p>
+<pre><code>  #SBATCH --account=paygo-project1 --qos=paygo-project1</code></pre></li>
+</ul>
+<p>Can also set default to something other than gratis for any user, but
+runs the risk of using fairshare or PAYGO budget for unrelated jobs.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="slurm-and-other-configuration">Slurm and other
+configuration</h2>
+<h3 id="database-prerequisites-12">Database prerequisites (1/2)</h3>
+<pre><code>[user1@sms ~]$ sudo mysqladmin create slurm_acct_db
+[user1@sms ~]$ sudo mysql
+MariaDB [(none)]&gt; create user &#39;slurm&#39;@&#39;localhost&#39; identified
+  by &#39;some_other_password&#39;;
+MariaDB [(none)]&gt; grant all privileges on slurm_acct_db.* to
+  &#39;slurm&#39;@&#39;localhost&#39;;
+MariaDB [(none)]&gt; exit</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="database-prerequisites-22">Database prerequisites (2/2)</h3>
+<pre><code>[user1@sms ~]$ sudo nano /etc/my.cnf.d/slurmdbd.cnf</code></pre>
+<p>Add the three lines below, save and exit <code>nano</code> with
+Ctrl-X:</p>
+<pre><code>[mysqld]
+innodb_lock_wait_timeout=900
+innodb_buffer_pool_size=4096M</code></pre>
+<pre><code>[user1@sms ~]$ sudo systemctl restart mariadb</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="slurmdbd-configuration"><code>slurmdbd</code> configuration</h3>
+<pre><code>[user1@sms ~]$ sudo cp /etc/slurm/slurmdbd.conf.example \
+  /etc/slurm/slurmdbd.conf
+[user1@sms ~]$ sudo nano /etc/slurm/slurmdbd.conf</code></pre>
+<p>Change <code>StoragePass=password</code> to
+<code>StoragePass=some_other_password</code></p>
+<pre><code>[user1@sms ~]$ sudo systemctl restart slurmdbd</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="slurmctld-configuration"><code>slurmctld</code>
+configuration</h3>
+<pre><code>[user1@sms ~]$ sudo nano /etc/slurm/slurm.conf</code></pre>
+<p>Change <code>AccountingStorageType=accounting_storage/none</code> to
+<code>AccountingStorageType=accounting_storage/slurmdbd</code></p>
+<pre><code>[user1@sms ~]$ sudo scontrol reconfigure
+[user1@sms ~]$ sudo sacctmgr add cluster &#39;cluster&#39;</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="final-testing-that-accounting-works-now">Final testing that
+accounting works now</h3>
+<pre><code>[user1@sms ~]$ srun hostname
+[user1@sms ~]$ sacct
+JobID           JobName  Partition ...
+------------ ---------- ---------- ...
+...            hostname     normal ...</code></pre>
+<p>You should see at least one JobID with a JobName of
+<code>hostname</code> and a State of <code>COMPLETED</code>.</p>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-setup-member-associations">Association setup: member
+associations</h3>
+<p>Setting up a funded account (which can be assigned a fairshare):</p>
+<pre><code>[user1@sms ~]$ sudo sacctmgr add account member1 \
+    cluster=cluster Description=&quot;Member1 Description&quot; \
+    FairShare=N</code></pre>
+<p>Adding a user to the funded account:</p>
+<pre><code>[user1@sms ~]$ sudo sacctmgr add user user1 account=member1</code></pre>
+<p>Removing a user from an account:</p>
+<pre><code>[user1@sms ~]$ sudo sacctmgr remove user where user=user1 \
+  and account=member1</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-setup-member-associations-1">Association setup:
+member associations</h3>
+<p>Modifying funded account fairshare:</p>
+<pre><code>[user1@sms ~]$ sudo sacctmgr modify account member1 set \
+  FairShare=N</code></pre>
+<p>Partition-specific fairshare (e.g., if the entity funded GPU
+nodes)</p>
+<pre><code>[user1@sms ~]$ sudo sacctmgr add user user1 account=member1 \
+  partition=gpu
+[user1@sms ~]$ sudo sacctmgr modify user user1 set \
+  FairShare=N where account=member1 partition=gpu</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-setup-paygo-associations">Association setup: PAYGO
+associations</h3>
+<p>Setting up the umbrella PAYGO account (which can be assigned a
+fairshare):</p>
+<pre><code>[user1@sms ~]$ sacctmgr add account paygo cluster=cluster \
+  Description=&quot;PAYGO Projects&quot; FairShare=N</code></pre>
+<p>Setting up a project-specific PAYGO account and QOS (in this case,
+with a quota of 1000 CPU-minutes):</p>
+<pre><code>[user1@sms ~]$ sacctmgr add account paygo-project1 \
+  cluster=cluster Description=&quot;PAYGO Project 1&quot; parent=paygo
+[user1@sms ~]$ sacctmgr add qos paygo-project1 \
+  flags=NoDecay,DenyOnLimit
+[user1@sms ~]$ sacctmgr modify qos paygo-project1 set \
+  grptresmins=cpu=1000
+[user1@sms ~]$ sacctmgr modify account name=paygo set \
+  qos+=paygo-project1</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-setup-paygo-associations-1">Association setup: PAYGO
+associations</h3>
+<p>Modifying umbrella PAYGO account fairshare:</p>
+<pre><code>sacctmgr modify account paygo set FairShare=N</code></pre>
+<p>Checking usage of a project-specific PAYGO QOS (UsageRaw is in
+CPU-seconds):</p>
+<pre><code>scontrol -o show assoc_mgr qos=paygo-project1 | \
+    grep QOS=paygo-project1 | egrep -o &#39;UsageRaw=[0-9.]*&#39;</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-setup-paygo-associations-2">Association setup: PAYGO
+associations</h3>
+<p>Adding/removing a user to/from a project-specific PAYGO QOS:</p>
+<pre><code>sacctmgr modify user user1 set qos+=paygo-project1
+sacctmgr modify user user1 set qos-=paygo-project1</code></pre>
+<p>Removing a project-specific PAYGO account and QOS:</p>
+<pre><code>sacctmgr modify account name=paygo-project1 set \
+  qos-=paygo-project1
+sacctmgr remove qos paygo-project1
+sacctmgr remove account paygo-project1</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="association-setup-gratis-entities">Association setup: gratis
+entities</h3>
+<p>Setting up the umbrella gratis account (which can be assigned a
+fairshare):</p>
+<pre><code>sacctmgr add account gratis cluster=cluster \
+    Description=&quot;Gratis Usage&quot; FairShare=N</code></pre>
+<p>Make sure new users end up using the gratis account by default:</p>
+<pre><code>sacctmgr add user username DefaultAccount=gratis</code></pre>
+<p>Modifying gratis account fairshare:</p>
+<pre><code>sacctmgr modify account gratis set FairShare=N</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="partition-setup">Partition setup</h3>
+<p>In slurm.conf, all partitions will have a common configuration
+of:</p>
+<pre><code>PartitionName=DEFAULT ExclusiveUser=NO LLN=NO MinNodes=1
+  PriorityJobFactor=1</code></pre>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="short-partitions">Short partitions</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="interactive">interactive</h4>
+<pre><code>PartitionName=interactive
+MaxNodes=4
+DefMemPerCPU=2000
+DefaultTime=02:00:00
+MaxTime=02:00:00
+AllowAccounts=ALL
+PriorityTier=3
+Nodes=c[1-2]</code></pre>
+</div><div class="column" style="width:50%;">
+<h4 id="debug">debug</h4>
+<pre><code>PartitionName=debug
+DefMemPerCPU=2000
+DefaultTime=00:30:00
+MaxTime=00:30:00
+AllowAccounts=ALL 
+PriorityTier=2
+Nodes=c[1-2]</code></pre>
+</div>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="medium-partitions">Medium partitions</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="batch">batch</h4>
+<pre><code>PartitionName=batch
+Default=YES
+MaxNodes=2
+DefMemPerCPU=2000
+DefaultTime=06:00:00
+MaxTime=2-00:00:00
+AllowAccounts=ALL
+PriorityTier=1
+Nodes=c[1-2]</code></pre>
+</div><div class="column" style="width:50%;">
+
+</div>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h3 id="long-partitions">Long partitions</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="long">long</h4>
+<pre><code>PartitionName=long
+MaxNodes=40
+DefMemPerCPU=2000
+DefaultTime=1-00:00:00
+MaxTime=7-00:00:00
+DenyAccounts=gratis
+PriorityTier=2
+Nodes=node[001-040]</code></pre>
+</div><div class="column" style="width:50%;">
+
+</div>
+</div>
+<div class="notes">
+<p>x</p>
+</div>
+<h2 id="demonstration-of-slurm-policies-in-use">Demonstration of Slurm
+policies in use</h2>
+<h3 id="demonstration-of-slurm-policies-in-use-1">Demonstration of Slurm
+policies in use</h3>
+<div class="notes">
+<p>x</p>
+</div>
+</body>
+</html>
