@@ -1,7 +1,7 @@
 # OpenHPC: Beyond the Install Guide
 
 Materials for "OpenHPC: Beyond the Install Guide" half-day tutorial.
-This is the `pearc24` branch for [PEARC24](https://pearc.acm.org/pearc24/).
+This includes all updates from the `pearc24` branch for [PEARC24](https://pearc.acm.org/pearc24/).
 
 Infrastructure preparation is largely adapted/copy-pasted from [Tim Middelkoop's ohpc-jetstream2 repo](https://github.com/MiddelkoopT/ohpc-jetstream2/), plus [Jetstream's CLI Overview](https://docs.jetstream-cloud.org/ui/cli/overview/) and following sections.
 
